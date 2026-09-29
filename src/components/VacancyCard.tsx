@@ -1,6 +1,7 @@
 "use client";
 
 import { Building2, ExternalLink, Flame, MapPin, Sparkles } from "lucide-react";
+import { useLanguage } from "@/utils/translations";
 
 export interface VacancyItem {
   _id?: string;
@@ -25,11 +26,14 @@ const HEADER_COLORS = [
 ];
 
 export default function VacancyCard({ vacancy, index = 0 }: VacancyCardProps) {
-  const isNoExperience = vacancy.tags?.some((tag) =>
-    /без опыта|стажировка|intern|trainee|стажер/i.test(tag)
-  ) || /стажер|intern|trainee|без опыта/i.test(vacancy.title);
+  const { t } = useLanguage();
 
-  const levelBadge = isNoExperience ? "Без опыта / Стажировка" : "Junior";
+  const isNoExperience =
+    vacancy.tags?.some((tag) =>
+      /без опыта|стажировка|intern|trainee|стажер/i.test(tag)
+    ) || /стажер|intern|trainee|без опыта/i.test(vacancy.title);
+
+  const levelBadge = isNoExperience ? t.badgeNoExp : t.badgeJunior;
   const headerBg = HEADER_COLORS[index % HEADER_COLORS.length];
 
   return (
@@ -68,7 +72,7 @@ export default function VacancyCard({ vacancy, index = 0 }: VacancyCardProps) {
             </span>
             <span className="inline-flex items-center gap-1 text-zinc-600">
               <MapPin className="w-3.5 h-3.5" />
-              Ташкент
+              {t.cityTashkent}
             </span>
           </div>
         </div>
@@ -76,10 +80,10 @@ export default function VacancyCard({ vacancy, index = 0 }: VacancyCardProps) {
         {/* Блок зарплаты */}
         <div className="inline-block bg-manga-yellow/40 border-2 border-black px-3 py-1.5 shadow-[2px_2px_0px_#000]">
           <span className="block text-[9px] font-black uppercase text-zinc-700 tracking-wider">
-            Зарплата
+            {t.salaryLabel}
           </span>
           <span className="text-base font-black text-black">
-            {vacancy.salary || "По договоренности"}
+            {vacancy.salary || t.salaryNegotiable}
           </span>
         </div>
 
@@ -97,7 +101,7 @@ export default function VacancyCard({ vacancy, index = 0 }: VacancyCardProps) {
           </div>
         )}
 
-        {/* Акцентная кнопка "Откликнуться" (ссылка на оригинал hh) */}
+        {/* Акцентная кнопка "Откликнуться" / "Topshirish" */}
         <div className="pt-1">
           <a
             href={vacancy.sourceUrl || "https://tashkent.hh.uz"}
@@ -106,7 +110,7 @@ export default function VacancyCard({ vacancy, index = 0 }: VacancyCardProps) {
             className="w-full py-3 px-4 bg-manga-orange text-white border-[3px] border-black shadow-[4px_4px_0px_#000] font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-manga-pink active:translate-x-[2px] active:translate-y-[2px] active:shadow-[1px_1px_0px_#000] transition-all"
           >
             <ExternalLink className="w-4 h-4 stroke-[2.5]" />
-            <span>Откликнуться</span>
+            <span>{t.applyButton}</span>
             <Sparkles className="w-4 h-4 stroke-[2.5] ml-auto" />
           </a>
         </div>

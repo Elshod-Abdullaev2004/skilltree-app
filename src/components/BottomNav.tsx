@@ -3,40 +3,42 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Briefcase, GitBranch, FileText, Swords } from "lucide-react";
-
-const NAV_ITEMS = [
-  {
-    href: "/",
-    label: "Вакансии",
-    icon: Briefcase,
-    activeBg: "bg-manga-yellow",
-    badge: "LIVE",
-  },
-  {
-    href: "/tree",
-    label: "Дерево",
-    icon: GitBranch,
-    activeBg: "bg-manga-lime",
-    badge: "ROADMAP",
-  },
-  {
-    href: "/resume",
-    label: "Резюме",
-    icon: FileText,
-    activeBg: "bg-manga-cyan",
-    badge: "AI",
-  },
-  {
-    href: "/trainer",
-    label: "Тренажер",
-    icon: Swords,
-    activeBg: "bg-manga-pink text-white",
-    badge: null,
-  },
-];
+import { useLanguage } from "@/utils/translations";
 
 export default function BottomNav() {
   const pathname = usePathname();
+  const { t } = useLanguage();
+
+  const navItems = [
+    {
+      href: "/",
+      label: t.navVacancies,
+      icon: Briefcase,
+      activeBg: "bg-manga-yellow",
+      badge: "LIVE",
+    },
+    {
+      href: "/tree",
+      label: t.navTree,
+      icon: GitBranch,
+      activeBg: "bg-manga-lime",
+      badge: "MAP",
+    },
+    {
+      href: "/resume",
+      label: t.navResume,
+      icon: FileText,
+      activeBg: "bg-manga-cyan",
+      badge: "AI",
+    },
+    {
+      href: "/trainer",
+      label: t.navTrainer,
+      icon: Swords,
+      activeBg: "bg-manga-pink text-white",
+      badge: null,
+    },
+  ];
 
   return (
     <nav
@@ -44,7 +46,7 @@ export default function BottomNav() {
       className="fixed bottom-0 left-0 right-0 z-40 mx-auto max-w-[430px] bg-manga-paper border-t-[3px] border-x-[3px] border-black px-2 pt-2 pb-3 shadow-[0_-4px_0_0_#000]"
     >
       <ul className="grid grid-cols-4 gap-1.5">
-        {NAV_ITEMS.map((item) => {
+        {navItems.map((item) => {
           const Icon = item.icon;
           const isActive =
             item.href === "/"

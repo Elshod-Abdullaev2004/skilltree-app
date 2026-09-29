@@ -14,6 +14,11 @@ const userSchema = new mongoose.Schema(
       required: [true, "Поле username обязательно"],
       trim: true,
     },
+    language: {
+      type: String,
+      enum: ["ru", "uz"],
+      default: "ru",
+    },
     rank: {
       type: String,
       default: "Junior Web Developer",

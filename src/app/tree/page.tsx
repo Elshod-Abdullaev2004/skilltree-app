@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useTelegram } from "@/hooks/useTelegram";
+import { useLanguage } from "@/utils/translations";
+import QuizModal, { type QuizQuestion } from "@/components/QuizModal";
 import {
   Award,
   Bell,
@@ -13,70 +15,52 @@ import {
   Code2,
 } from "lucide-react";
 
+export type SkillKey =
+  | "HTML"
+  | "CSS"
+  | "JavaScript"
+  | "React"
+  | "Next.js"
+  | "Tailwind";
+
 export interface RoadmapStep {
-  id: string;
+  id: SkillKey;
   name: string;
-  stepNumber: string;
-  subtitle: string;
   xp: number;
-  description: string;
 }
 
 export const FRONTEND_ROADMAP: RoadmapStep[] = [
-  {
-    id: "HTML",
-    name: "HTML",
-    stepNumber: "ШАГ 01",
-    subtitle: "Семантическая верстка, формы, доступность (a11y)",
-    xp: 150,
-    description: "Базовый скелет любого веб-приложения: теги, SEO-семантика и структура документа.",
-  },
-  {
-    id: "CSS",
-    name: "CSS",
-    stepNumber: "ШАГ 02",
-    subtitle: "Flexbox, CSS Grid, адаптивность Mobile-First, анимации",
-    xp: 200,
-    description: "Стилизация интерфейсов, кастомные переменные и идеальная мобильная верстка.",
-  },
-  {
-    id: "JavaScript",
-    name: "JavaScript",
-    stepNumber: "ШАГ 03",
-    subtitle: "ES6+, Замыкания, Event Loop, Promises, Fetch API",
-    xp: 350,
-    description: "Язык логики фронтенда: работа с DOM, асинхронные запросы к серверу и алгоритмы.",
-  },
-  {
-    id: "React",
-    name: "React",
-    stepNumber: "ШАГ 04",
-    subtitle: "Компоненты, Хуки (useState, useEffect), Стейт-менеджмент",
-    xp: 450,
-    description: "Создание современных реактивных интерфейсов и переиспользуемой компонентной базы.",
-  },
-  {
-    id: "Next.js",
-    name: "Next.js",
-    stepNumber: "ШАГ 05",
-    subtitle: "App Router, SSR, Server Components, Оптимизация",
-    xp: 550,
-    description: "Продакшен-фреймворк для полнофункциональных веб-приложений и быстрой загрузки.",
-  },
-  {
-    id: "Tailwind",
-    name: "Tailwind",
-    stepNumber: "ШАГ 06",
-    subtitle: "Utility-First CSS, Нео-брутализм, Дизайн-системы",
-    xp: 300,
-    description: "Скоростная сборка стильных интерфейсов прямо в разметке без раздутых CSS-файлов.",
-  },
+  { id: "HTML", name: "HTML", xp: 150 },
+  { id: "CSS", name: "CSS", xp: 200 },
+  { id: "JavaScript", name: "JavaScript", xp: 350 },
+  { id: "React", name: "React", xp: 450 },
+  { id: "Next.js", name: "Next.js", xp: 550 },
+  { id: "Tailwind", name: "Tailwind", xp: 300 },
 ];
+
+export function broadcastLevelUpdate(level: number, skills: string[]) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem("skilltree_level", String(level));
+    localStorage.setItem("skilltree_skills", JSON.stringify(skills));
+    window.dispatchEvent(
+      new CustomEvent("skilltree:level-updated", {
+        detail: { level, skills },
+      })
+    );
+  } catch {
+    // ignore storage errors
+  }
+}
 
 export default function TreePage() {
   const { user } = useTelegram();
+  const { t } = useLanguage();
   const [learnedSkills, setLearnedSkills] = useState<string[]>([]);
   const [level, setLevel] = useState<number>(1);
+  const [activeSkillQuizKey, setActiveSkillQuizKey] = useState<SkillKey | null>(
+    null
+  );
   const [savingSkill, setSavingSkill] = useState<string | null>(null);
   const [tgNotifications, setTgNotifications] = useState<boolean>(true);
 
@@ -87,9 +71,10 @@ export default function TreePage() {
   const telegramId = user?.id ? String(user.id) : "guest_dev";
   const username =
     user?.username ||
-    (user ? `${user.first_name} ${user.last_name || ""}`.trim() : "Frontend Samurai");
+    (user
+      ? `${user.first_name} ${user.last_name || ""}`.trim()
+      : "Frontend Samurai");
 
-  // Загружаем сохраненные навыки пользователя с бэкенда
   const fetchUserProfile = useCallback(async () => {
     try {
       const res = await fetch(
@@ -99,14 +84,14 @@ export default function TreePage() {
         const data = await res.json();
         const found = Array.isArray(data) ? data[0] : data;
         if (found) {
-          if (Array.isArray(found.skills)) {
-            setLearnedSkills(found.skills);
-          }
-          if (typeof found.level === "number") {
-            setLevel(found.level);
-          } else if (Array.isArray(found.skills)) {
-            setLevel(1 + found.skills.length);
-          }
+          const loadedSkills = Array.isArray(found.skills) ? found.skills : [];
+          const computedLevel =
+            typeof found.level === "number"
+              ? found.level
+              : 1 + loadedSkills.length;
+          setLearnedSkills(loadedSkills);
+          setLevel(computedLevel);
+          broadcastLevelUpdate(computedLevel, loadedSkills);
         }
       }
     } catch (error) {
@@ -118,17 +103,31 @@ export default function TreePage() {
     fetchUserProfile();
   }, [fetchUserProfile]);
 
-  // Обработчик клика по навыку: отправляет POST /api/users/skills и закрашивает карточку
-  const handleSkillClick = async (skillName: string) => {
-    const alreadyLearned = learnedSkills.includes(skillName);
-
-    // Оптимистичное обновление UI (мгновенно закрашиваем карточку кислотно-зеленым)
-    if (!alreadyLearned) {
-      const nextSkills = [...learnedSkills, skillName];
-      setLearnedSkills(nextSkills);
-      setLevel(1 + nextSkills.length);
+  const handleSkillCardClick = (skillName: SkillKey) => {
+    if (learnedSkills.includes(skillName)) {
+      return;
     }
+    setActiveSkillQuizKey(skillName);
+  };
 
+  const activeQuiz: QuizQuestion | null = activeSkillQuizKey
+    ? {
+        skill: activeSkillQuizKey,
+        question: t.quizzes[activeSkillQuizKey].question,
+        options: t.quizzes[activeSkillQuizKey].options,
+        correctAnswer: t.quizzes[activeSkillQuizKey].correctAnswer,
+      }
+    : null;
+
+  const handleQuizSuccess = async (skillName: string) => {
+    const nextSkills = learnedSkills.includes(skillName)
+      ? learnedSkills
+      : [...learnedSkills, skillName];
+    const nextLevel = 1 + nextSkills.length;
+
+    setLearnedSkills(nextSkills);
+    setLevel(nextLevel);
+    broadcastLevelUpdate(nextLevel, nextSkills);
     setSavingSkill(skillName);
 
     try {
@@ -146,11 +145,15 @@ export default function TreePage() {
 
       if (res.ok) {
         const data = await res.json();
-        if (data?.user?.skills) {
-          setLearnedSkills(data.user.skills);
-        }
-        if (typeof data?.user?.level === "number") {
-          setLevel(data.user.level);
+        if (Array.isArray(data?.user?.skills)) {
+          const srvSkills = data.user.skills;
+          const srvLevel =
+            typeof data?.user?.level === "number"
+              ? data.user.level
+              : 1 + srvSkills.length;
+          setLearnedSkills(srvSkills);
+          setLevel(srvLevel);
+          broadcastLevelUpdate(srvLevel, srvSkills);
         }
       }
     } catch (error) {
@@ -170,11 +173,18 @@ export default function TreePage() {
 
   return (
     <div className="space-y-5">
+      {/* Модальное окно проверки навыка */}
+      <QuizModal
+        quiz={activeQuiz}
+        onClose={() => setActiveSkillQuizKey(null)}
+        onSuccess={handleQuizSuccess}
+      />
+
       {/* Шапка профиля и текущего уровня */}
       <section className="bg-white border-[3px] border-black shadow-[4px_4px_0px_#000] overflow-hidden">
         <div className="bg-black text-white px-3.5 py-2 flex items-center justify-between">
           <span className="text-[11px] font-black tracking-widest uppercase text-manga-yellow">
-            КАРТОЧКА ОХОТНИКА • SKILLTREE
+            {t.hunterCardBadge}
           </span>
           <span className="text-[11px] font-mono bg-zinc-800 px-2 py-0.5 border border-zinc-600 text-manga-lime">
             {user?.username ? `@${user.username}` : "@frontend_samurai"}
@@ -185,22 +195,27 @@ export default function TreePage() {
           <div className="flex items-center gap-3">
             {/* Рамка уровня */}
             <div className="w-16 h-16 shrink-0 bg-manga-yellow border-[3px] border-black shadow-[3px_3px_0px_#000] flex flex-col items-center justify-center -rotate-2">
-              <span className="text-[10px] font-black uppercase">УРОВЕНЬ</span>
+              <span className="text-[10px] font-black uppercase">
+                {t.levelLabel}
+              </span>
               <span className="text-2xl font-black leading-none">{level}</span>
             </div>
 
             <div className="min-w-0 flex-1">
               <h1 className="text-lg font-black uppercase tracking-tight leading-tight truncate">
-                {user ? `Привет, ${user.first_name}!` : "Frontend Разработчик"}
+                {user
+                  ? `${t.greeting}, ${user.first_name}!`
+                  : t.defaultUser}
               </h1>
               <div className="mt-1 inline-flex items-center gap-1.5 bg-manga-lime border-2 border-black px-2.5 py-0.5 shadow-[2px_2px_0px_#000]">
                 <Award className="w-4 h-4 stroke-[2.5] shrink-0" />
                 <span className="text-xs font-black uppercase tracking-wide">
-                  LVL {level} • {learnedSkills.length} / {FRONTEND_ROADMAP.length} НАВЫКОВ
+                  LVL {level} • {learnedSkills.length} /{" "}
+                  {FRONTEND_ROADMAP.length} {t.skillsWord}
                 </span>
               </div>
               <p className="text-[11px] font-bold text-zinc-700 mt-1">
-                Накоплено опыта: <span className="font-black">{totalXp} XP</span>
+                {t.xpAccumulated} <span className="font-black">{totalXp} XP</span>
               </p>
             </div>
           </div>
@@ -210,7 +225,7 @@ export default function TreePage() {
             <div className="flex items-center justify-between text-xs font-black uppercase mb-1.5">
               <span className="flex items-center gap-1">
                 <Zap className="w-3.5 h-3.5 fill-manga-yellow" />
-                Прогресс Frontend Roadmap
+                {t.roadmapProgress}
               </span>
               <span>{progressPercent}%</span>
             </div>
@@ -226,34 +241,34 @@ export default function TreePage() {
 
       {/* Интерактивный Roadmap: HTML -> CSS -> JavaScript -> React -> Next.js -> Tailwind */}
       <section
-        aria-label="Интерактивное дерево навыков Frontend"
+        aria-label={t.treeTitle}
         className="bg-white border-[3px] border-black shadow-[4px_4px_0px_#000] p-3.5 bg-speedlines"
       >
         <div className="flex items-center justify-between border-b-[3px] border-black pb-2.5 mb-4">
           <div>
             <span className="text-[10px] font-black uppercase bg-manga-yellow px-2 py-0.5 border border-black">
-              FRONTEND ROADMAP • ИНТЕРАКТИВНО
+              {t.roadmapBadge}
             </span>
             <h2 className="text-lg font-black uppercase tracking-tight mt-1 flex items-center gap-1.5">
               <Code2 className="w-5 h-5 stroke-[2.5]" />
-              Дерево навыков
+              {t.treeTitle}
             </h2>
           </div>
 
           <div className="text-right text-[10px] font-bold space-y-1">
             <div className="flex items-center justify-end gap-1.5">
               <span className="w-3 h-3 bg-manga-lime border-2 border-black inline-block" />
-              <span className="font-black">Изучено</span>
+              <span className="font-black">{t.statusLearned}</span>
             </div>
             <div className="flex items-center justify-end gap-1.5">
               <span className="w-3 h-3 bg-zinc-300 border-2 border-black inline-block" />
-              <span className="font-black">Не изучено</span>
+              <span className="font-black">{t.statusNotLearned}</span>
             </div>
           </div>
         </div>
 
-        <p className="text-xs font-bold text-zinc-700 mb-4 bg-manga-bg border-2 border-black p-2.5 shadow-[2px_2px_0px_#000]">
-          👆 Нажми на любую карточку навыка ниже, чтобы отметить его изученным и сохранить в свой профиль MongoDB!
+        <p className="text-xs font-bold text-zinc-800 mb-4 bg-manga-yellow/40 border-2 border-black p-2.5 shadow-[2px_2px_0px_#000]">
+          {t.treeHint}
         </p>
 
         {/* Вертикальная цепочка: HTML -> CSS -> JavaScript -> React -> Next.js -> Tailwind */}
@@ -261,17 +276,18 @@ export default function TreePage() {
           {FRONTEND_ROADMAP.map((step, index) => {
             const isLearned = learnedSkills.includes(step.id);
             const isSaving = savingSkill === step.id;
+            const stepTranslation = t.steps[step.id];
 
             return (
               <div key={step.id} className="w-full flex flex-col items-center">
                 <button
                   type="button"
-                  onClick={() => handleSkillClick(step.id)}
+                  onClick={() => handleSkillCardClick(step.id)}
                   disabled={isSaving}
-                  className={`w-full text-left border-[3px] border-black p-3.5 transition-all select-none cursor-pointer ${
+                  className={`w-full text-left border-[3px] border-black p-3.5 transition-all select-none ${
                     isLearned
-                      ? "bg-manga-lime text-black shadow-[4px_4px_0px_#000] -translate-y-0.5"
-                      : "bg-zinc-200 text-zinc-600 shadow-[4px_4px_0px_#000] hover:bg-zinc-300/80 active:translate-x-[2px] active:translate-y-[2px]"
+                      ? "bg-manga-lime text-black shadow-[4px_4px_0px_#000] -translate-y-0.5 cursor-default"
+                      : "bg-zinc-200 text-zinc-600 shadow-[4px_4px_0px_#000] hover:bg-zinc-300/80 active:translate-x-[2px] active:translate-y-[2px] cursor-pointer"
                   }`}
                 >
                   <div className="flex items-center justify-between gap-2 mb-1.5">
@@ -282,7 +298,7 @@ export default function TreePage() {
                           : "bg-zinc-300 text-zinc-700"
                       }`}
                     >
-                      {step.stepNumber}
+                      {stepTranslation.stepNumber}
                     </span>
 
                     <div className="flex items-center gap-1.5">
@@ -299,18 +315,20 @@ export default function TreePage() {
                         className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-black uppercase border-2 border-black ${
                           isLearned
                             ? "bg-white text-black"
-                            : "bg-zinc-700 text-white"
+                            : "bg-zinc-800 text-manga-yellow"
                         }`}
                       >
                         {isLearned ? (
                           <>
                             <CheckCircle2 className="w-3 h-3 stroke-[3] text-green-700" />
-                            <span>ИЗУЧЕНО</span>
+                            <span>{t.badgeConfirmed}</span>
                           </>
                         ) : (
                           <>
                             <Lock className="w-3 h-3 stroke-[2.5]" />
-                            <span>{isSaving ? "СОХРАНЕНИЕ..." : "ИЗУЧИТЬ"}</span>
+                            <span>
+                              {isSaving ? t.badgeSaving : t.badgeTakeQuiz}
+                            </span>
                           </>
                         )}
                       </span>
@@ -331,13 +349,15 @@ export default function TreePage() {
                           isLearned ? "text-zinc-900" : "text-zinc-600"
                         }`}
                       >
-                        {step.subtitle}
+                        {stepTranslation.subtitle}
                       </p>
                     </div>
 
                     <div
                       className={`w-10 h-10 shrink-0 border-2 border-black flex items-center justify-center shadow-[2px_2px_0px_#000] ${
-                        isLearned ? "bg-manga-yellow text-black" : "bg-zinc-300 text-zinc-700"
+                        isLearned
+                          ? "bg-manga-yellow text-black"
+                          : "bg-zinc-300 text-zinc-700"
                       }`}
                     >
                       {isLearned ? (
@@ -359,7 +379,9 @@ export default function TreePage() {
                     />
                     <div
                       className={`w-6 h-6 border-2 border-black flex items-center justify-center shadow-[2px_2px_0px_#000] ${
-                        isLearned ? "bg-manga-lime text-black" : "bg-zinc-200 text-zinc-600"
+                        isLearned
+                          ? "bg-manga-lime text-black"
+                          : "bg-zinc-200 text-zinc-600"
                       }`}
                     >
                       <ArrowDown className="w-3.5 h-3.5 stroke-[3]" />
@@ -379,7 +401,7 @@ export default function TreePage() {
 
       {/* Тумблер уведомлений в Telegram */}
       <section
-        aria-label="Настройки уведомлений Telegram"
+        aria-label={t.tgNotifyTitle}
         className="bg-manga-cyan/30 border-[3px] border-black shadow-[4px_4px_0px_#000] p-3.5"
       >
         <div className="flex items-center justify-between gap-3">
@@ -396,10 +418,10 @@ export default function TreePage() {
                 htmlFor="tg-vacancy-toggle"
                 className="text-sm font-black uppercase leading-tight block cursor-pointer"
               >
-                Уведомлять о вакансиях в Telegram
+                {t.tgNotifyTitle}
               </label>
               <p className="text-xs font-bold text-zinc-700 mt-0.5">
-                Подбор вакансий под твои {learnedSkills.length} изученных навыка
+                {t.tgNotifyDescPrefix} {learnedSkills.length}
               </p>
             </div>
           </div>
@@ -414,7 +436,7 @@ export default function TreePage() {
               tgNotifications ? "bg-manga-lime" : "bg-zinc-300"
             }`}
           >
-            <span className="sr-only">Уведомлять о вакансиях в Telegram</span>
+            <span className="sr-only">{t.tgNotifyTitle}</span>
             <span
               className={`block w-6 h-6 bg-black text-white border border-black transition-transform flex items-center justify-center text-[9px] font-black ${
                 tgNotifications ? "translate-x-7" : "translate-x-0"

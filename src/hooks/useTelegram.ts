@@ -27,6 +27,7 @@ export interface TelegramWebApp {
 }
 
 export interface SyncUserPayload {
+  language?: "ru" | "uz";
   rank?: string;
   unlockedSkills?: string[];
   notificationsEnabled?: boolean;

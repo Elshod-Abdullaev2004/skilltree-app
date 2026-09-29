@@ -34,6 +34,7 @@ router.post("/", async (req, res) => {
     const {
       telegramId,
       username,
+      language,
       rank,
       skills,
       level,
@@ -51,6 +52,9 @@ router.post("/", async (req, res) => {
 
     if (existingUser) {
       if (username !== undefined) existingUser.username = username;
+      if (language === "ru" || language === "uz") {
+        existingUser.language = language;
+      }
       if (rank !== undefined) existingUser.rank = rank;
       if (Array.isArray(skills)) existingUser.skills = skills;
       if (typeof level === "number") existingUser.level = level;
@@ -68,6 +72,7 @@ router.post("/", async (req, res) => {
     const newUser = await User.create({
       telegramId: String(telegramId),
       username,
+      language: language === "uz" ? "uz" : "ru",
       rank,
       skills: Array.isArray(skills) ? skills : [],
       level: typeof level === "number" ? level : 1,
@@ -86,7 +91,7 @@ router.post("/", async (req, res) => {
 
 /**
  * POST /api/users/skills
- * Добавление (или переключение) навыка в профиле пользователя и обновление его уровня (level)
+ * Добавление навыка в профиль пользователя и обновление его уровня (level)
  */
 router.post("/skills", async (req, res) => {
   try {
@@ -119,7 +124,6 @@ router.post("/skills", async (req, res) => {
         user.skills.push(skill);
       }
 
-      // Уровень растет с каждым изученным навыком (базовый 1 + количество навыков)
       user.level = 1 + user.skills.length;
     }
 
