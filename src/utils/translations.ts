@@ -26,7 +26,10 @@ export function useLanguage() {
 
     const handleLangUpdate = (event: Event) => {
       const customEvent = event as CustomEvent<{ lang: Language }>;
-      if (customEvent.detail?.lang === "ru" || customEvent.detail?.lang === "uz") {
+      if (
+        customEvent.detail?.lang === "ru" ||
+        customEvent.detail?.lang === "uz"
+      ) {
         setLangState(customEvent.detail.lang);
       }
     };
@@ -130,7 +133,6 @@ export const translations = {
     tgNotifyTitle: "Уведомлять о вакансиях в Telegram",
     tgNotifyDescPrefix: "Подбор вакансий под твои изученные навыки:",
 
-    // Описание шагов Roadmap
     steps: {
       HTML: {
         stepNumber: "ШАГ 01",
@@ -200,6 +202,94 @@ export const translations = {
         correctAnswer: "p-4",
       },
     },
+
+    // Экран ИИ-Резюме (ResumePage)
+    resume: {
+      heroBadge: "ГЕНЕРАТОР ОФФЕРОВ • AI CV",
+      heroTitle: "ИИ-Резюме за 10 сек",
+      heroBubble:
+        "Заполни 4 поля ниже — ИИ упакует твои пет-проекты на языке метрик, который обожают техлиды и ATS-фильтры!",
+      labelRole: "Желаемая должность",
+      placeholderRole: "Например: Junior Frontend Developer",
+      labelStack: "Стек технологий",
+      placeholderStack: "React, TypeScript, Node.js, Tailwind CSS...",
+      labelGithub: "Ссылка на GitHub",
+      placeholderGithub: "https://github.com/username",
+      labelProjects: "Описание пет-проектов",
+      placeholderProjects: "Опиши 1-2 главных проекта, какие задачи решал...",
+      defaultProjects:
+        "1. SkillTree TMA — Telegram Mini App для поиска первой работы в IT (Next.js, Tailwind).\n2. CryptoPulse — трекер портфеля с графиками в реальном времени и WebSockets.",
+      generateButton: "Сгенерировать резюме",
+      resultHeader: "Готовое резюме для отклика",
+      copyButton: "Скопировать",
+      copiedButton: "Скопировано!",
+      tplPosition: "🎯 ПОЗИЦИЯ:",
+      tplGithub: "🔗 GITHUB:",
+      tplStack: "⚡ КЛЮЧЕВОЙ СТЕК:",
+      tplProjects: "🚀 ОПЫТ И ПЕТ-ПРОЕКТЫ (IMPACT-ФОРМАТ):",
+      tplHighlightsHeader: "💡 ДОСТИЖЕНИЯ ДЛЯ HR-СКРИНИНГА:",
+      tplHighlights:
+        "• Разработал Mobile-First архитектуру для Telegram Mini App с оценкой Lighthouse Performance 98/100.\n• Настроил строгую типизацию компонентов и переиспользуемую UI-систему на Tailwind CSS.\n• Готов к выполнению тестового задания и выходу в команду за 24 часа.",
+    },
+
+    // Экран Тренажера (TrainerPage)
+    trainer: {
+      heroBadge: "БОЕВОЙ СИМУЛЯТОР СОБЕСЕДОВАНИЯ",
+      roundBadge: "РАУНД 01 / 05",
+      heroTitle: "ИИ-Ментор: Тренажер",
+      verdictPrefix: "ВЕРДИКТ:",
+      mistakeLabel: "Подсветка ошибки в ответе:",
+      correctionLabel: "Разбор от ИИ-ментора:",
+      inputLabel: "Твой ответ в комикс-чате:",
+      inputPlaceholder: "Напиши исправленный ответ с [...prev, newItem]...",
+      sendButton: "Ответить",
+      nowTimestamp: "Сейчас",
+      userSpeakerDefault: "АЛЕКСЕЙ «KURO»",
+      userBadge: "JUNIOR // LVL 04",
+      mentorSpeaker: "СЕНСЕЙ КАЙТО [AI]",
+      mentorBadge: "TECH LEAD // LVL 99",
+      initialMessages: [
+        {
+          id: "msg-1",
+          sender: "mentor" as const,
+          timestamp: "14:02",
+          sfx: "ВОПРОС БОССА!",
+          text: "Представь техническое собеседование на Junior React. Почему в React нельзя обновлять state напрямую (например, count = count + 1) и зачем нужен иммутабельный апдейт массивов?",
+        },
+        {
+          id: "msg-2",
+          sender: "user" as const,
+          timestamp: "14:03",
+          text: "Если поменять переменную напрямую, React не узнает об изменении и не вызовет ререндер. А для массива можно сделать arr.push(newItem) и потом передать этот же массив в setArr(arr), чтобы обновить экран.",
+        },
+        {
+          id: "msg-3",
+          sender: "mentor" as const,
+          timestamp: "14:03",
+          sfx: "КОНТРАТАКА!",
+          text: "Первая половина ответа — в яблочко! Но во второй части ты попался в классическую ловушку с мутацией ссылки.",
+          feedback: {
+            score: "7 / 10 • ХОРОШАЯ ПОПЫТКА",
+            mistakeHighlight:
+              "Ошибка: «сделать arr.push(newItem) и потом передать этот же массив в setArr(arr)»",
+            correction:
+              "Правильно: React сравнивает состояние через Object.is (по ссылке). При arr.push() ссылка на массив остается прежней, поэтому ререндер НЕ сработает! Нужно создавать новый массив: setArr(prev => [...prev, newItem]).",
+            xpAwarded: "+85 XP В КОПИЛКУ REACT",
+          },
+        },
+      ],
+      aiReply: {
+        sfx: "КРИТИЧЕСКИЙ УСПЕХ!",
+        text: "Отличное уточнение! Использование колбэка setArr(prev => [...prev, item]) гарантирует работу со свежим состоянием даже при батчинге обновлений в React 19.",
+        feedback: {
+          score: "10 / 10 • БЕЗУПРЕЧНОЕ КОМБО",
+          mistakeHighlight: "Ошибок не обнаружено — чистый иммутабельный код!",
+          correction:
+            "Совет для собеседования: упомяни также structuredClone() для глубокого копирования вложенных объектов.",
+          xpAwarded: "+120 XP • УРОВЕНЬ ДОВЕРИЯ ПОВЫШЕН",
+        },
+      },
+    },
   },
 
   uz: {
@@ -266,7 +356,6 @@ export const translations = {
     tgNotifyTitle: "Telegram orqali vakansiyalar haqida xabar berish",
     tgNotifyDescPrefix: "O'rganilgan ko'nikmalaringiz bo'yicha vakansiyalar:",
 
-    // Описание шагов Roadmap
     steps: {
       HTML: {
         stepNumber: "01-QADAM",
@@ -334,6 +423,96 @@ export const translations = {
           "Tailwind CSS-da ichki masofani (padding) qaysi klass belgilaydi?",
         options: ["m-4", "p-4", "border-4"],
         correctAnswer: "p-4",
+      },
+    },
+
+    // Экран ИИ-Резюме (ResumePage)
+    resume: {
+      heroBadge: "OFFERLAR GENERATORI • AI CV",
+      heroTitle: "10 soniyada AI-Rezyume",
+      heroBubble:
+        "Quyidagi 4 ta maydonni to'ldiring — AI sizning pet-loyihalaringizni Tech Lead va HR-filtrlar yoqtiradigan metrikalar tilida tayyorlab beradi!",
+      labelRole: "Istalgan lavozim",
+      placeholderRole: "Masalan: Junior Frontend Developer",
+      labelStack: "Texnologiyalar steki",
+      placeholderStack: "React, TypeScript, Node.js, Tailwind CSS...",
+      labelGithub: "GitHub havolasi",
+      placeholderGithub: "https://github.com/username",
+      labelProjects: "Pet-loyihalar tavsifi",
+      placeholderProjects:
+        "1-2 ta asosiy loyihangizni va qanday vazifalarni hal qilganingizni yozing...",
+      defaultProjects:
+        "1. SkillTree TMA — IT sohasida birinchi ishni topish uchun Telegram Mini App (Next.js, Tailwind).\n2. CryptoPulse — WebSockets va real vaqt rejimida grafiklar bilan portfel trekeri.",
+      generateButton: "Rezyume yaratish",
+      resultHeader: "Topshirish uchun tayyor rezyume",
+      copyButton: "Nusxalash",
+      copiedButton: "Nusxalandi!",
+      tplPosition: "🎯 LAVOZIM:",
+      tplGithub: "🔗 GITHUB:",
+      tplStack: "⚡ ASOSIY STEK:",
+      tplProjects: "🚀 TAJRIBA VA PET-LOYIHALAR (IMPACT-FORMAT):",
+      tplHighlightsHeader: "💡 HR-SKRINING UCHUN YUTUQLAR:",
+      tplHighlights:
+        "• Telegram Mini App uchun Lighthouse Performance 98/100 ko'rsatkichiga ega Mobile-First arxitekturani ishlab chiqdim.\n• Komponentlarning qat'iy tiplashtirilishi va Tailwind CSS-da qayta ishlatiluvchi UI-tizimni sozladim.\n• Sinov topshirig'ini bajarishga va 24 soat ichida jamoaga qo'shilishga tayyorman.",
+    },
+
+    // Экран Тренажера (TrainerPage)
+    trainer: {
+      heroBadge: "SUHBAT JANGOVAR SIMULYATORI",
+      roundBadge: "RAUND 01 / 05",
+      heroTitle: "AI-Mentor: Trenajor",
+      verdictPrefix: "XULOSA:",
+      mistakeLabel: "Javobdagi xatoning ajratilishi:",
+      correctionLabel: "AI-mentordan tahlil:",
+      inputLabel: "Komiks-chatdagi javobingiz:",
+      inputPlaceholder:
+        "[...prev, newItem] bilan to'g'rilangan javobni yozing...",
+      sendButton: "Javob berish",
+      nowTimestamp: "Hozir",
+      userSpeakerDefault: "ALEKSEY «KURO»",
+      userBadge: "JUNIOR // LVL 04",
+      mentorSpeaker: "SENSEY KAYTO [AI]",
+      mentorBadge: "TECH LEAD // LVL 99",
+      initialMessages: [
+        {
+          id: "msg-1",
+          sender: "mentor" as const,
+          timestamp: "14:02",
+          sfx: "BOSS SAVOLI!",
+          text: "Junior React lavozimiga texnik suhbatni tasavvur qiling. Nima uchun React-da state-ni to'g'ridan-to'g'ri yangilab bo'lmaydi (masalan, count = count + 1) va massivlarni immutabel tarzda yangilash nima uchun kerak?",
+        },
+        {
+          id: "msg-2",
+          sender: "user" as const,
+          timestamp: "14:03",
+          text: "Agar o'zgaruvchini to'g'ridan-to'g'ri o'zgartirsak, React bu haqda bilmaydi va qayta render (re-render) qilmaydi. Massiv uchun esa arr.push(newItem) qilib, keyin o'sha massivni setArr(arr) ga uzatish mumkin.",
+        },
+        {
+          id: "msg-3",
+          sender: "mentor" as const,
+          timestamp: "14:03",
+          sfx: "QARSHI HUJUM!",
+          text: "Javobning birinchi qismi — ayni nishonga! Lekin ikkinchi qismida havola (reference) mutatsiyasi bilan bog'liq klassik tuzoqqa tushdingiz.",
+          feedback: {
+            score: "7 / 10 • YAXSHI URINISH",
+            mistakeHighlight:
+              "Xato: «arr.push(newItem) qilib, keyin o'sha massivni setArr(arr) ga uzatish»",
+            correction:
+              "To'g'ri yechim: React holatni Object.is orqali (havola bo'yicha) solishtiradi. arr.push() da massiv havolasi o'zgarmaydi, shuning uchun re-render ISHLAMAYDI! Yangi massiv yaratish kerak: setArr(prev => [...prev, newItem]).",
+            xpAwarded: "+85 XP REACT XAZINASIGA",
+          },
+        },
+      ],
+      aiReply: {
+        sfx: "KRITIK MUVAFFAQIYAT!",
+        text: "Ajoyib aniqlik! setArr(prev => [...prev, item]) kolbekidan foydalanish React 19 da yangilanishlar guruhlanganda (batching) ham eng yangi holat bilan ishlashni kafolatlaydi.",
+        feedback: {
+          score: "10 / 10 • BENUQSON KOMBO",
+          mistakeHighlight: "Xatolar topilmadi — toza immutabel kod!",
+          correction:
+            "Suhbat uchun maslahat: ichma-ich obyektlarni chuqur nusxalash uchun structuredClone() haqida ham aytib o'ting.",
+          xpAwarded: "+120 XP • ISHONCH DARAJASI OSHDI",
+        },
       },
     },
   },
