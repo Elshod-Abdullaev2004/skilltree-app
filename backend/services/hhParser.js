@@ -1,8 +1,11 @@
 const axios = require("axios");
 const cron = require("node-cron");
+const { Markup } = require("telegraf");
 const Vacancy = require("../models/Vacancy");
+const User = require("../models/User");
 
 const HH_API_URL = "https://api.hh.ru/vacancies";
+const DEFAULT_WEBAPP_URL = "https://skilltree-tma.vercel.app";
 
 // ID региона Ташкент в справочнике HeadHunter (api.hh.ru/areas)
 const TASHKENT_AREA_ID = "2759";
@@ -124,6 +127,12 @@ const TECH_KEYWORDS = [
   { pattern: /flutter|dart|ios|swift|android|kotlin/i, tag: "Mobile" },
 ];
 
+let botGetter = null;
+
+function registerBotGetter(fn) {
+  botGetter = fn;
+}
+
 /**
  * Форматирует объект salary из ответа HH API в читаемую строку
  */
@@ -228,9 +237,62 @@ async function fetchHhByExperience(experienceId) {
 }
 
 /**
+ * Рассылает push-уведомления всем пользователям в базе через bot.telegram.sendMessage
+ */
+async function broadcastNewVacanciesNotification(newVacancies) {
+  if (!Array.isArray(newVacancies) || newVacancies.length === 0) {
+    return 0;
+  }
+
+  const bot = typeof botGetter === "function" ? botGetter() : null;
+  if (!bot) {
+    console.warn("⚠️ [HH Parser] Экземпляр бота недоступен для рассылки уведомлений.");
+    return 0;
+  }
+
+  const webAppUrl = process.env.WEBAPP_URL || DEFAULT_WEBAPP_URL;
+  const users = await User.find({ notificationsEnabled: { $ne: false } });
+  let sentCount = 0;
+
+  for (const user of users) {
+    // Отправляем только реальным численным Telegram chat_id
+    if (!user.telegramId || !/^\d+$/.test(String(user.telegramId))) {
+      continue;
+    }
+
+    const isUz = user.language === "uz";
+    const text = isUz
+      ? "🔥 Yangi amaliyotlar topildi! Birinchi bo'lib topshirish uchun SkillTree-ni oching!"
+      : "🔥 Найдены новые стажировки! Открой SkillTree, чтобы откликнуться первым!";
+
+    const buttonText = isUz ? "🚀 SkillTree-ni ochish" : "🚀 Открыть SkillTree";
+
+    try {
+      await bot.telegram.sendMessage(user.telegramId, text, {
+        ...Markup.inlineKeyboard([
+          [Markup.button.webApp(buttonText, webAppUrl)],
+        ]),
+      });
+      sentCount += 1;
+    } catch (err) {
+      console.warn(
+        `⚠️ Не удалось отправить уведомление пользователю ${user.telegramId}:`,
+        err.message
+      );
+    }
+  }
+
+  console.log(
+    `📣 [HH Parser] Push-уведомления о новых вакансиях (${newVacancies.length} шт.) отправлены ${sentCount} пользователям.`
+  );
+  return sentCount;
+}
+
+/**
  * Основная функция синхронизации вакансий из HeadHunter в коллекцию Vacancy (MongoDB)
  */
-async function syncHhVacancies() {
+async function syncHhVacancies(options = {}) {
+  const { forceNotify = false } = options;
   console.log("🔄 [HH Parser] Запуск синхронизации ИТ-вакансий (Ташкент)...");
 
   let rawEntries = [];
@@ -246,7 +308,7 @@ async function syncHhVacancies() {
     console.warn(
       `⚠️ [HH Parser] Прямой запрос к api.hh.ru вернул статус ${
         status || error.message
-      } (защита DDoS-Guard для VPN/прокси или фильтр заголовка). Используем резервный пул вакансий Ташкента.`
+      }. Используем резервный пул вакансий Ташкента.`
     );
     usedFallback = true;
     rawEntries = TASHKENT_FALLBACK_VACANCIES.map((item) => ({
@@ -264,6 +326,7 @@ async function syncHhVacancies() {
 
   let upsertedCount = 0;
   const savedVacancies = [];
+  const newVacancies = [];
 
   for (const { item, experienceId } of uniqueMap.values()) {
     const sourceUrl =
@@ -277,18 +340,35 @@ async function syncHhVacancies() {
       tags: extractTags(item, experienceId),
     };
 
-    const doc = await Vacancy.findOneAndUpdate(
-      { sourceUrl },
-      { $set: vacancyData },
-      { upsert: true, new: true, runValidators: true }
-    );
+    // Проверяем, была ли эта вакансия в базе данных ранее
+    const existingDoc = await Vacancy.findOne({ sourceUrl });
+
+    if (!existingDoc) {
+      const createdDoc = await Vacancy.create(vacancyData);
+      newVacancies.push(createdDoc);
+      savedVacancies.push(createdDoc);
+    } else {
+      existingDoc.set(vacancyData);
+      const updatedDoc = await existingDoc.save();
+      savedVacancies.push(updatedDoc);
+    }
 
     upsertedCount += 1;
-    savedVacancies.push(doc);
+  }
+
+  // Если вызван ручной тест (/force_parse), а все вакансии из пула уже были в БД,
+  // передаем найденные вакансии в newVacancies, чтобы гарантированно протестировать рассылку
+  if (forceNotify && newVacancies.length === 0 && savedVacancies.length > 0) {
+    newVacancies.push(savedVacancies[0]);
+  }
+
+  let notifiedUsers = 0;
+  if (newVacancies.length > 0) {
+    notifiedUsers = await broadcastNewVacanciesNotification(newVacancies);
   }
 
   console.log(
-    `✅ [HH Parser] Синхронизация завершена! Сохранено в MongoDB: ${upsertedCount} вакансий.`
+    `✅ [HH Parser] Синхронизация завершена! Всего: ${upsertedCount}, Новых: ${newVacancies.length}, Уведомлено: ${notifiedUsers}.`
   );
 
   return {
@@ -297,6 +377,8 @@ async function syncHhVacancies() {
       : "HeadHunter Live API (api.hh.ru)",
     fetchedFromHh: uniqueMap.size,
     savedToMongo: upsertedCount,
+    newVacanciesCount: newVacancies.length,
+    notifiedUsers,
     area: "Ташкент (ID: 2759)",
     experience: EXPERIENCE_LEVELS,
     vacancies: savedVacancies,
@@ -324,4 +406,5 @@ function initHhCronJob() {
 module.exports = {
   syncHhVacancies,
   initHhCronJob,
+  registerBotGetter,
 };

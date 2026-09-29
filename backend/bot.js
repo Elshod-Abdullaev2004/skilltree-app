@@ -1,5 +1,6 @@
 const { Telegraf, Markup } = require("telegraf");
 const User = require("./models/User");
+const { syncHhVacancies, registerBotGetter } = require("./services/hhParser");
 
 // Продакшен HTTPS URL нашего Next.js фронтенда на Vercel
 const DEFAULT_WEBAPP_URL = "https://skilltree-tma.vercel.app";
@@ -19,8 +20,37 @@ function startBot() {
   const bot = new Telegraf(token);
   const webAppUrl = process.env.WEBAPP_URL || DEFAULT_WEBAPP_URL;
 
+  // Регистрируем геттер бота в hhParser для рассылки уведомлений
+  registerBotGetter(() => botInstance);
+
   // 1. Обработчик команды /start: выбор языка (Русский / O'zbekcha)
   bot.start(async (ctx) => {
+    const from = ctx.from || {};
+    const telegramId = String(from.id || "");
+    const username =
+      from.username ||
+      `${from.first_name || ""} ${from.last_name || ""}`.trim() ||
+      `user_${telegramId}`;
+
+    // Регистрируем пользователя в БД сразу при /start, чтобы он получал уведомления
+    if (telegramId) {
+      try {
+        await User.findOneAndUpdate(
+          { telegramId },
+          {
+            $setOnInsert: {
+              telegramId,
+              username,
+              language: from.language_code === "uz" ? "uz" : "ru",
+            },
+          },
+          { upsert: true, new: true }
+        );
+      } catch (err) {
+        console.warn("⚠️ Не удалось сохранить пользователя при /start:", err.message);
+      }
+    }
+
     await ctx.reply(
       "Выберите язык / Tilni tanlang:",
       Markup.inlineKeyboard([
@@ -42,7 +72,8 @@ function startBot() {
 
     const from = ctx.from || {};
     const telegramId = String(from.id || "unknown");
-    const firstName = from.first_name || (lang === "uz" ? "Dasturchi" : "Разработчик");
+    const firstName =
+      from.first_name || (lang === "uz" ? "Dasturchi" : "Разработчик");
     const username =
       from.username ||
       `${from.first_name || ""} ${from.last_name || ""}`.trim() ||
@@ -62,7 +93,10 @@ function startBot() {
         { upsert: true, new: true }
       );
     } catch (dbErr) {
-      console.error("❌ [Telegram Bot] Ошибка сохранения языка в БД:", dbErr.message);
+      console.error(
+        "❌ [Telegram Bot] Ошибка сохранения языка в БД:",
+        dbErr.message
+      );
     }
 
     if (lang === "uz") {
@@ -104,6 +138,43 @@ function startBot() {
 
   bot.action("lang_ru", (ctx) => handleLanguageSelection(ctx, "ru"));
   bot.action("lang_uz", (ctx) => handleLanguageSelection(ctx, "uz"));
+
+  // 3. Скрытая команда /force_parse для внеочередного запуска парсера и проверки push-уведомлений
+  bot.command("force_parse", async (ctx) => {
+    const from = ctx.from || {};
+    const telegramId = String(from.id || "");
+    const username =
+      from.username ||
+      `${from.first_name || ""} ${from.last_name || ""}`.trim() ||
+      `user_${telegramId}`;
+
+    // Убеждаемся, что вызывающий пользователь сохранен в БД для получения рассылки
+    if (telegramId) {
+      try {
+        await User.findOneAndUpdate(
+          { telegramId },
+          {
+            $setOnInsert: {
+              telegramId,
+              username,
+              language: from.language_code === "uz" ? "uz" : "ru",
+            },
+          },
+          { upsert: true, new: true }
+        );
+      } catch {
+        // ignore
+      }
+    }
+
+    await ctx.reply("🔍 Ручной парсинг запущен...");
+
+    try {
+      await syncHhVacancies({ forceNotify: true });
+    } catch (error) {
+      console.error("❌ Ошибка при выполнении /force_parse:", error.message);
+    }
+  });
 
   // Проверяем токен через getMe(), устанавливаем кнопку меню WebApp и запускаем long-polling
   bot.telegram
