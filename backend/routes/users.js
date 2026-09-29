@@ -10,9 +10,12 @@ const router = express.Router();
 router.get("/", async (req, res) => {
   try {
     const { telegramId } = req.query;
-    const filter = telegramId ? { telegramId: String(telegramId) } : {};
+    if (telegramId) {
+      const user = await User.findOne({ telegramId: String(telegramId) });
+      return res.status(200).json(user ? [user] : []);
+    }
 
-    const users = await User.find(filter).sort({ createdAt: -1 });
+    const users = await User.find({}).sort({ createdAt: -1 });
     return res.status(200).json(users);
   } catch (error) {
     return res.status(500).json({
@@ -32,6 +35,8 @@ router.post("/", async (req, res) => {
       telegramId,
       username,
       rank,
+      skills,
+      level,
       unlockedSkills,
       notificationsEnabled,
     } = req.body;
@@ -47,6 +52,8 @@ router.post("/", async (req, res) => {
     if (existingUser) {
       if (username !== undefined) existingUser.username = username;
       if (rank !== undefined) existingUser.rank = rank;
+      if (Array.isArray(skills)) existingUser.skills = skills;
+      if (typeof level === "number") existingUser.level = level;
       if (Array.isArray(unlockedSkills)) {
         existingUser.unlockedSkills = unlockedSkills;
       }
@@ -62,7 +69,9 @@ router.post("/", async (req, res) => {
       telegramId: String(telegramId),
       username,
       rank,
-      unlockedSkills,
+      skills: Array.isArray(skills) ? skills : [],
+      level: typeof level === "number" ? level : 1,
+      unlockedSkills: Array.isArray(unlockedSkills) ? unlockedSkills : [],
       notificationsEnabled,
     });
 
@@ -70,6 +79,59 @@ router.post("/", async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       message: "Ошибка при сохранении пользователя",
+      error: error.message,
+    });
+  }
+});
+
+/**
+ * POST /api/users/skills
+ * Добавление (или переключение) навыка в профиле пользователя и обновление его уровня (level)
+ */
+router.post("/skills", async (req, res) => {
+  try {
+    const { telegramId, username, skill } = req.body;
+
+    if (!skill) {
+      return res.status(400).json({
+        message: "Поле skill обязательно для добавления навыка",
+      });
+    }
+
+    const resolvedTelegramId = String(telegramId || "guest_dev");
+    const resolvedUsername = username || "Frontend Samurai";
+
+    let user = await User.findOne({ telegramId: resolvedTelegramId });
+
+    if (!user) {
+      user = new User({
+        telegramId: resolvedTelegramId,
+        username: resolvedUsername,
+        skills: [skill],
+        level: 2,
+      });
+    } else {
+      if (!Array.isArray(user.skills)) {
+        user.skills = [];
+      }
+
+      if (!user.skills.includes(skill)) {
+        user.skills.push(skill);
+      }
+
+      // Уровень растет с каждым изученным навыком (базовый 1 + количество навыков)
+      user.level = 1 + user.skills.length;
+    }
+
+    await user.save();
+
+    return res.status(200).json({
+      message: `Навык ${skill} успешно сохранен`,
+      user,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Ошибка при добавлении навыка пользователю",
       error: error.message,
     });
   }

@@ -40,8 +40,9 @@ declare global {
   }
 }
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+export const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  "https://skilltree-backend-swuh.onrender.com";
 
 /**
  * Отправляет данные пользователя из Telegram (initDataUnsafe.user) на бэкенд POST /api/users
@@ -51,7 +52,10 @@ export async function sendTelegramUserToBackend(
   extraData: SyncUserPayload = {}
 ) {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/users`, {
+    const apiUrl =
+      process.env.NEXT_PUBLIC_API_URL ||
+      "https://skilltree-backend-swuh.onrender.com";
+    const response = await fetch(`${apiUrl}/api/users`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

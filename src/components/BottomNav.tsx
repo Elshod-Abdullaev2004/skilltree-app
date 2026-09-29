@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Briefcase, FileText, Swords, GitBranch } from "lucide-react";
+import { Briefcase, GitBranch, FileText, Swords } from "lucide-react";
 
 const NAV_ITEMS = [
   {
@@ -10,7 +10,14 @@ const NAV_ITEMS = [
     label: "Вакансии",
     icon: Briefcase,
     activeBg: "bg-manga-yellow",
-    badge: "5",
+    badge: "LIVE",
+  },
+  {
+    href: "/tree",
+    label: "Дерево",
+    icon: GitBranch,
+    activeBg: "bg-manga-lime",
+    badge: "ROADMAP",
   },
   {
     href: "/resume",
@@ -26,13 +33,6 @@ const NAV_ITEMS = [
     activeBg: "bg-manga-pink text-white",
     badge: null,
   },
-  {
-    href: "/skill-tree",
-    label: "Дерево навыков",
-    icon: GitBranch,
-    activeBg: "bg-manga-lime",
-    badge: "LVL 4",
-  },
 ];
 
 export default function BottomNav() {
@@ -41,7 +41,7 @@ export default function BottomNav() {
   return (
     <nav
       aria-label="Основная навигация"
-      className="fixed bottom-0 left-0 right-0 z-40 mx-auto max-w-[430px] bg-manga-paper border-t-[3px] border-x-[3px] border-manga-ink px-2 pt-2 pb-3 shadow-[0_-4px_0_0_#111111]"
+      className="fixed bottom-0 left-0 right-0 z-40 mx-auto max-w-[430px] bg-manga-paper border-t-[3px] border-x-[3px] border-black px-2 pt-2 pb-3 shadow-[0_-4px_0_0_#000]"
     >
       <ul className="grid grid-cols-4 gap-1.5">
         {NAV_ITEMS.map((item) => {
@@ -49,24 +49,26 @@ export default function BottomNav() {
           const isActive =
             item.href === "/"
               ? pathname === "/" || pathname === "/vacancies"
+              : item.href === "/tree"
+              ? pathname.startsWith("/tree") || pathname.startsWith("/skill-tree")
               : pathname.startsWith(item.href);
 
           return (
             <li key={item.href}>
               <Link
                 href={item.href}
-                className={`relative flex flex-col items-center justify-center py-2 px-1 border-2 border-manga-ink transition-all select-none ${
+                className={`relative flex flex-col items-center justify-center py-2 px-1 border-2 border-black transition-all select-none ${
                   isActive
-                    ? `${item.activeBg} -translate-y-1 shadow-brutal-sm font-black`
+                    ? `${item.activeBg} -translate-y-1 shadow-[2px_2px_0px_#000] font-black`
                     : "bg-white text-zinc-700 hover:bg-zinc-100 font-bold active:translate-y-0.5"
                 }`}
               >
                 {item.badge && (
                   <span
-                    className={`absolute -top-2 right-1 px-1 py-0 text-[9px] font-black border border-manga-ink uppercase leading-tight ${
+                    className={`absolute -top-2 right-1 px-1 py-0 text-[9px] font-black border border-black uppercase leading-tight ${
                       isActive
-                        ? "bg-manga-ink text-manga-yellow"
-                        : "bg-manga-yellow text-manga-ink"
+                        ? "bg-black text-manga-yellow"
+                        : "bg-manga-yellow text-black"
                     }`}
                   >
                     {item.badge}

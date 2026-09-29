@@ -19,9 +19,17 @@ const userSchema = new mongoose.Schema(
       default: "Junior Web Developer",
       trim: true,
     },
+    skills: {
+      type: [String],
+      default: [],
+    },
+    level: {
+      type: Number,
+      default: 1,
+    },
     unlockedSkills: {
       type: [String],
-      default: ["html-css", "js-core", "git-flow", "react-hooks"],
+      default: [],
     },
     notificationsEnabled: {
       type: Boolean,

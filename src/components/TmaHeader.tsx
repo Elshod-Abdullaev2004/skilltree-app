@@ -12,8 +12,9 @@ export default function TmaHeader() {
 
   const getChapterLabel = () => {
     switch (pathname) {
+      case "/tree":
       case "/skill-tree":
-        return "GLAVA 04 // ПРОФИЛЬ & РАНГ";
+        return "GLAVA 04 // ДЕРЕВО НАВЫКОВ";
       case "/resume":
         return "GLAVA 02 // ИИ-ГЕНЕРАТОР";
       case "/trainer":
@@ -71,11 +72,11 @@ export default function TmaHeader() {
             <span>{USER_PROFILE.streakDays}д</span>
           </div>
           <Link
-            href="/skill-tree"
+            href="/tree"
             className="flex items-center gap-1 bg-manga-lime border-2 border-manga-ink px-2.5 py-1 shadow-brutal-sm text-xs font-black active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all"
           >
             <Zap className="w-3.5 h-3.5 fill-manga-ink" />
-            <span>{USER_PROFILE.xp} XP</span>
+            <span>ДЕРЕВО</span>
           </Link>
         </div>
       </div>
