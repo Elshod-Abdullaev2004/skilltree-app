@@ -38,16 +38,14 @@ export default function VacancyCard({ vacancy, index = 0 }: VacancyCardProps) {
   const levelBadge = isNoExperience ? t.badgeNoExp : t.badgeJunior;
   const headerBg = HEADER_COLORS[index % HEADER_COLORS.length];
 
-  // Динамическое извлечение ссылки на вакансию из пропсов (sourceUrl, url или alternate_url)
-  const applyUrl =
-    vacancy.sourceUrl ||
+  // Прямая веб-ссылка на саму вакансию (строго прямая ссылка без поиска)
+  const directUrl =
     vacancy.url ||
     vacancy.alternate_url ||
+    vacancy.sourceUrl ||
     (vacancy.id && !isNaN(Number(vacancy.id))
       ? `https://tashkent.hh.uz/vacancy/${vacancy.id}`
-      : `https://tashkent.hh.uz/search/vacancy?text=${encodeURIComponent(
-          vacancy.title || "IT"
-        )}&area=2759`);
+      : "#");
 
   return (
     <article className="bg-white border-[3px] border-black shadow-[4px_4px_0px_#000] overflow-hidden transition-transform">
@@ -117,7 +115,7 @@ export default function VacancyCard({ vacancy, index = 0 }: VacancyCardProps) {
         {/* Акцентная кнопка "Откликнуться" / "Topshirish" */}
         <div className="pt-1">
           <a
-            href={applyUrl}
+            href={directUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="w-full py-3 px-4 bg-manga-orange text-white border-[3px] border-black shadow-[4px_4px_0px_#000] font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-manga-pink active:translate-x-[2px] active:translate-y-[2px] active:shadow-[1px_1px_0px_#000] transition-all"

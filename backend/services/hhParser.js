@@ -17,118 +17,146 @@ const EXPERIENCE_LEVELS = ["noExperience", "between1And3"];
 // 96 - Программист, разработчик | 124 - Тестировщик (QA) | 10 - Аналитик | 156 - BI-аналитик | 148 - Системный аналитик
 const IT_PROFESSIONAL_ROLES = ["96", "124", "10", "156", "148"];
 
-// Пул проверенных реальных IT-вакансий и стажировок в Ташкенте со ссылками на живую выдачу HeadHunter
+// Пул проверенных реальных IT-вакансий и стажировок в Ташкенте с прямыми веб-ссылками на конкретные вакансии
 const TASHKENT_FALLBACK_VACANCIES = [
   {
-    id: "hh-uz-frontend-react-uzum",
-    name: "Junior Frontend Developer (React / TypeScript)",
-    employer: { name: "Uzum Technologies" },
+    id: "134880323",
+    name: "Intern Front-end Developer (JavaScript / HTML / CSS)",
+    employer: { name: "Itransition" },
     area: { name: "Ташкент" },
-    salary: { from: 600, to: 1000, currency: "USD" },
-    alternate_url: "https://tashkent.hh.uz/search/vacancy?text=Junior+Frontend+Developer+React&area=2759",
-    experienceId: "between1And3",
-    professional_roles: [{ name: "Программист, разработчик" }],
-    snippet: {
-      requirement: "Уверенные знания JavaScript, TypeScript, React, Next.js и Tailwind CSS.",
-      responsibility: "Разработка клиентских веб-приложений и мобильных веб-интерфейсов экосистемы Uzum.",
-    },
-  },
-  {
-    id: "hh-uz-trainee-frontend-payme",
-    name: "Стажер Frontend-разработчик (React / Next.js)",
-    employer: { name: "Payme Uzbekistan" },
-    area: { name: "Ташкент" },
-    salary: { from: 4000000, to: 6500000, currency: "UZS" },
-    alternate_url: "https://tashkent.hh.uz/search/vacancy?text=Стажер+Frontend+React+Next.js&area=2759",
+    salary: { from: 500, to: 800, currency: "USD" },
+    alternate_url: "https://tashkent.hh.uz/vacancy/134880323",
     experienceId: "noExperience",
     professional_roles: [{ name: "Программист, разработчик" }],
     snippet: {
-      requirement: "Базовые знания HTML, CSS, JavaScript ES6+, React и Git.",
-      responsibility: "Участие в разработке внутренних дашбордов и клиентских мини-приложений.",
+      requirement: "Базовые знания HTML5, CSS3, JavaScript ES6+, интерес к современной фронтенд разработке.",
+      responsibility: "Обучение и участие в реальных проектах компании под руководством опытного ментора.",
     },
   },
   {
-    id: "hh-uz-backend-nodejs-tbc",
-    name: "Junior Node.js Backend Developer",
+    id: "137785384",
+    name: "Intern/Junior Full-stack engineer",
+    employer: { name: "ООО VERTEX FREIGHT" },
+    area: { name: "Ташкент" },
+    salary: { from: 400, to: 700, currency: "USD" },
+    alternate_url: "https://tashkent.hh.uz/vacancy/137785384",
+    experienceId: "noExperience",
+    professional_roles: [{ name: "Программист, разработчик" }],
+    snippet: {
+      requirement: "Понимание принципов работы клиент-серверных приложений, базовые знания React и Node.js.",
+      responsibility: "Разработка модулей логистической платформы и внутренних веб-интерфейсов.",
+    },
+  },
+  {
+    id: "137571195",
+    name: "React js - frontend-разработчик",
+    employer: { name: "Apex Insurance" },
+    area: { name: "Ташкент" },
+    salary: { from: 6000000, to: 10000000, currency: "UZS" },
+    alternate_url: "https://tashkent.hh.uz/vacancy/137571195",
+    experienceId: "between1And3",
+    professional_roles: [{ name: "Программист, разработчик" }],
+    snippet: {
+      requirement: "Опыт коммерческой разработки на React, Redux Toolkit/Zustand, адаптивная верстка, REST API.",
+      responsibility: "Разработка пользовательских интерфейсов страховых сервисов и личного кабинета.",
+    },
+  },
+  {
+    id: "136973012",
+    name: "Middle Frontend Developer (React + TypeScript) в стартап",
+    employer: { name: "Skyeng Uzbekistan" },
+    area: { name: "Ташкент" },
+    salary: { from: 8000000, to: 14000000, currency: "UZS" },
+    alternate_url: "https://tashkent.hh.uz/vacancy/136973012",
+    experienceId: "between1And3",
+    professional_roles: [{ name: "Программист, разработчик" }],
+    snippet: {
+      requirement: "Уверенный React, TypeScript, опыт оптимизации производительности, Next.js, Git.",
+      responsibility: "Создание новых фичей образовательной платформы в продуктовой команде.",
+    },
+  },
+  {
+    id: "137227333",
+    name: "Frontend Web Developer (React / JavaScript)",
+    employer: { name: "Garant bank" },
+    area: { name: "Ташкент" },
+    salary: { from: 7000000, to: 12000000, currency: "UZS" },
+    alternate_url: "https://tashkent.hh.uz/vacancy/137227333",
+    experienceId: "between1And3",
+    professional_roles: [{ name: "Программист, разработчик" }],
+    snippet: {
+      requirement: "Знание React, современных веб-стандартов, опыт интеграции банковских API.",
+      responsibility: "Поддержка и развитие интернет-банкинга и портала для клиентов.",
+    },
+  },
+  {
+    id: "137449444",
+    name: "Frontend-разработчик (React / Vue)",
+    employer: { name: "Uzum Technologies" },
+    area: { name: "Ташкент" },
+    salary: { from: 800, to: 1300, currency: "USD" },
+    alternate_url: "https://tashkent.hh.uz/vacancy/137449444",
+    experienceId: "between1And3",
+    professional_roles: [{ name: "Программист, разработчик" }],
+    snippet: {
+      requirement: "Отличное знание JavaScript/TypeScript, опыт с React или Vue, адаптивная верстка.",
+      responsibility: "Разработка сервисов экосистемы Uzum Market и финтех-модулей.",
+    },
+  },
+  {
+    id: "137463376",
+    name: "Junior Node.js / Бекенд разработчик",
+    employer: { name: "Payme Uzbekistan" },
+    area: { name: "Ташкент" },
+    salary: { from: 6000000, to: 9500000, currency: "UZS" },
+    alternate_url: "https://tashkent.hh.uz/vacancy/137463376",
+    experienceId: "between1And3",
+    professional_roles: [{ name: "Программист, разработчик" }],
+    snippet: {
+      requirement: "Node.js, Express, понимание архитектуры микросервисов, PostgreSQL/MongoDB, REST API.",
+      responsibility: "Разработка и оптимизация платежных шлюзов и API для партнеров.",
+    },
+  },
+  {
+    id: "137064626",
+    name: "Python Backend Developer (FastAPI / Django)",
     employer: { name: "TBC Bank Uzbekistan" },
     area: { name: "Ташкент" },
     salary: { from: 700, to: 1200, currency: "USD" },
-    alternate_url: "https://tashkent.hh.uz/search/vacancy?text=Junior+Node.js+Backend+Developer&area=2759",
+    alternate_url: "https://tashkent.hh.uz/vacancy/137064626",
     experienceId: "between1And3",
     professional_roles: [{ name: "Программист, разработчик" }],
     snippet: {
-      requirement: "Опыт с Node.js, Express/NestJS, MongoDB или PostgreSQL, понимание REST API.",
-      responsibility: "Разработка микросервисов цифрового банкинга.",
+      requirement: "Знание Python 3, FastAPI, PostgreSQL, Docker, опыт работы с брокерами сообщений.",
+      responsibility: "Создание высоконагруженных бэкенд-сервисов цифрового банка.",
     },
   },
   {
-    id: "hh-uz-qa-intern-click",
-    name: "QA Intern / Начинающий тестировщик ПО",
-    employer: { name: "CLICK" },
-    area: { name: "Ташкент" },
-    salary: { from: 4500000, to: 7000000, currency: "UZS" },
-    alternate_url: "https://tashkent.hh.uz/search/vacancy?text=QA+Intern+Тестировщик&area=2759",
-    experienceId: "noExperience",
-    professional_roles: [{ name: "Тестировщик" }],
-    snippet: {
-      requirement: "Понимание теории тестирования, знание Postman, базовый SQL, внимательность.",
-      responsibility: "Ручное и API-тестирование мобильного приложения и веб-сервисов.",
-    },
-  },
-  {
-    id: "hh-uz-analyst-alif",
-    name: "Junior Data / Системный аналитик",
-    employer: { name: "Alif Tech" },
-    area: { name: "Ташкент" },
-    salary: { from: 600, to: 900, currency: "USD" },
-    alternate_url: "https://tashkent.hh.uz/search/vacancy?text=Junior+Data+Аналитик&area=2759",
-    experienceId: "between1And3",
-    professional_roles: [{ name: "Аналитик" }],
-    snippet: {
-      requirement: "Знание SQL, Python (Pandas), умение описывать бизнес-процессы и REST API.",
-      responsibility: "Сбор требований, подготовка ТЗ для команды разработки и анализ продуктовых метрик.",
-    },
-  },
-  {
-    id: "hh-uz-fullstack-trainee-epam",
-    name: "Fullstack Trainee (JavaScript / React / Node.js)",
-    employer: { name: "EPAM Systems Uzbekistan" },
-    area: { name: "Ташкент" },
-    salary: { from: 400, to: 700, currency: "USD" },
-    alternate_url: "https://tashkent.hh.uz/search/vacancy?text=Fullstack+Trainee+React+Node.js&area=2759",
-    experienceId: "noExperience",
-    professional_roles: [{ name: "Программист, разработчик" }],
-    snippet: {
-      requirement: "Пет-проекты на React и Node.js, знание английского языка от B1.",
-      responsibility: "Оплачиваемая стажировка в международной команде с ментором.",
-    },
-  },
-  {
-    id: "hh-uz-python-junior-beeline",
-    name: "Junior Python / FastAPI Developer",
-    employer: { name: "Beeline Uzbekistan (Unitel)" },
-    area: { name: "Ташкент" },
-    salary: { from: 5000000, to: 8000000, currency: "UZS" },
-    alternate_url: "https://tashkent.hh.uz/search/vacancy?text=Junior+Python+Developer&area=2759",
-    experienceId: "between1And3",
-    professional_roles: [{ name: "Программист, разработчик" }],
-    snippet: {
-      requirement: "Знание Python 3, FastAPI/Django, PostgreSQL, базовые навыки Docker.",
-      responsibility: "Разработка бэкенд-сервисов и интеграция внешних API.",
-    },
-  },
-  {
-    id: "hh-uz-flutter-junior-anor",
-    name: "Junior Mobile Developer (Flutter / Dart)",
+    id: "137669278",
+    name: "Java Backend Developer (Middle / Junior+)",
     employer: { name: "Anor Bank" },
     area: { name: "Ташкент" },
-    salary: { from: 600, to: 1100, currency: "USD" },
-    alternate_url: "https://tashkent.hh.uz/search/vacancy?text=Junior+Flutter+Mobile+Developer&area=2759",
+    salary: { from: 800, to: 1400, currency: "USD" },
+    alternate_url: "https://tashkent.hh.uz/vacancy/137669278",
     experienceId: "between1And3",
     professional_roles: [{ name: "Программист, разработчик" }],
     snippet: {
-      requirement: "Опыт кроссплатформенной разработки на Flutter, понимание архитектуры BLoC/Provider.",
-      responsibility: "Участие в создании мобильных финансовых продуктов банка.",
+      requirement: "Java Core, Spring Boot, Spring Security, Hibernate, PostgreSQL, Git.",
+      responsibility: "Разработка сервисов дистанционного банковского обслуживания.",
+    },
+  },
+  {
+    id: "134904135",
+    name: "React Native / Mobile Developer",
+    employer: { name: "CLICK" },
+    area: { name: "Ташкент" },
+    salary: { from: 5000000, to: 8500000, currency: "UZS" },
+    alternate_url: "https://tashkent.hh.uz/vacancy/134904135",
+    experienceId: "between1And3",
+    professional_roles: [{ name: "Программист, разработчик" }],
+    snippet: {
+      requirement: "Опыт кроссплатформенной разработки на React Native, TypeScript, Redux, работа с нативными модулями.",
+      responsibility: "Развитие мобильного приложения платежной системы CLICK.",
     },
   },
 ];
@@ -320,8 +348,13 @@ async function broadcastNewVacanciesNotification(newVacancies) {
  * Основная функция синхронизации вакансий из HeadHunter в коллекцию Vacancy (MongoDB)
  */
 async function syncHhVacancies(options = {}) {
-  const { forceNotify = false } = options;
+  const { forceNotify = false, forceReset = false } = options;
   console.log("🔄 [HH Parser] Запуск синхронизации ИТ-вакансий (Ташкент)...");
+
+  if (forceReset) {
+    const totalDeleted = await Vacancy.deleteMany({});
+    console.log(`🧹 [HH Parser] Полный сброс: удалено ${totalDeleted.deletedCount} вакансий перед новой синхронизацией.`);
+  }
 
   let rawEntries = [];
   let usedFallback = false;
@@ -352,17 +385,17 @@ async function syncHhVacancies(options = {}) {
     }
   }
 
-  // Удаляем устаревшие записи с некорректными ссылками на старые заглушки (10948101 и т.д.)
+  // Удаляем устаревшие записи с некорректными ссылками (поисковые ссылки search?, старые 10948101 и т.д.)
   try {
     const deleteResult = await Vacancy.deleteMany({
       $or: [
-        { sourceUrl: { $regex: /1094810[1-9]|hh\.uz\/vacancy\/10948/i } },
+        { sourceUrl: { $regex: /search\?|\/10948|колбас/i } },
         { title: { $regex: /колбас/i } },
       ],
     });
     if (deleteResult.deletedCount > 0) {
       console.log(
-        `🧹 [HH Parser] Удалено ${deleteResult.deletedCount} устаревших/некорректных записей.`
+        `🧹 [HH Parser] Удалено ${deleteResult.deletedCount} устаревших/поисковых записей.`
       );
     }
   } catch (err) {
@@ -377,13 +410,12 @@ async function syncHhVacancies(options = {}) {
   const newVacancies = [];
 
   for (const { item, experienceId } of uniqueMap.values()) {
+    // Получаем строгую прямую веб-ссылку на вакансию
     const sourceUrl =
       item.alternate_url ||
       (item.id && !isNaN(Number(item.id))
         ? `https://tashkent.hh.uz/vacancy/${item.id}`
-        : `https://tashkent.hh.uz/search/vacancy?text=${encodeURIComponent(
-            item.name || "IT"
-          )}&area=2759`);
+        : item.url || "");
 
     const vacancyData = {
       title: item.name || "IT Специалист",

@@ -5,6 +5,27 @@ const { syncHhVacancies } = require("../services/hhParser");
 const router = express.Router();
 
 /**
+ * GET /api/vacancies/reset
+ * Очистка коллекции вакансий и полный перезапуск парсера с нуля с сохранением прямых ссылок
+ */
+router.get("/reset", async (_req, res) => {
+  try {
+    const deleteResult = await Vacancy.deleteMany({});
+    const result = await syncHhVacancies({ forceReset: true });
+    return res.status(200).json({
+      message: "Коллекция вакансий успешно очищена и перезаполнена с нуля",
+      deletedCount: deleteResult.deletedCount,
+      ...result,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Ошибка при сбросе и перезапуске синхронизации вакансий",
+      error: error.message,
+    });
+  }
+});
+
+/**
  * GET /api/vacancies/sync
  * Ручной запуск парсера вакансий HeadHunter (Ташкент, IT, noExperience + between1And3)
  */
