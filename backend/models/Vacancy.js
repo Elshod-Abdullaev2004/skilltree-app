@@ -29,7 +29,19 @@ const vacancySchema = new mongoose.Schema(
   },
   {
     timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
   }
 );
 
+// Виртуальные геттеры для обратной совместимости
+vacancySchema.virtual("url").get(function () {
+  return this.sourceUrl;
+});
+
+vacancySchema.virtual("alternate_url").get(function () {
+  return this.sourceUrl;
+});
+
 module.exports = mongoose.model("Vacancy", vacancySchema);
+

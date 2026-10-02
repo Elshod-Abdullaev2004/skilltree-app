@@ -26,7 +26,9 @@ export default function VacanciesPage() {
     setErrorFlag(false);
 
     try {
-      const response = await fetch(`${apiUrl}/api/vacancies`);
+      const response = await fetch(`${apiUrl}/api/vacancies`, {
+        cache: "no-store",
+      });
       if (!response.ok) {
         throw new Error(`Status: ${response.status}`);
       }
@@ -34,7 +36,9 @@ export default function VacanciesPage() {
       let data: VacancyItem[] = await response.json();
 
       if (Array.isArray(data) && data.length === 0) {
-        const syncResponse = await fetch(`${apiUrl}/api/vacancies/sync`);
+        const syncResponse = await fetch(`${apiUrl}/api/vacancies/sync`, {
+          cache: "no-store",
+        });
         if (syncResponse.ok) {
           const syncResult = await syncResponse.json();
           if (Array.isArray(syncResult.vacancies)) {

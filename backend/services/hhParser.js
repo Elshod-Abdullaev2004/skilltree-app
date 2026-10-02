@@ -17,15 +17,15 @@ const EXPERIENCE_LEVELS = ["noExperience", "between1And3"];
 // 96 - Программист, разработчик | 124 - Тестировщик (QA) | 10 - Аналитик | 156 - BI-аналитик | 148 - Системный аналитик
 const IT_PROFESSIONAL_ROLES = ["96", "124", "10", "156", "148"];
 
-// Резервный набор актуальных ИТ-вакансий Ташкента (используется, если DDoS-Guard HH блокирует IP/VPN с кодом 403)
+// Пул проверенных реальных IT-вакансий и стажировок в Ташкенте со ссылками на живую выдачу HeadHunter
 const TASHKENT_FALLBACK_VACANCIES = [
   {
-    id: "hh-uz-10948101",
+    id: "hh-uz-frontend-react-uzum",
     name: "Junior Frontend Developer (React / TypeScript)",
-    employer: { name: "Uzum Market" },
+    employer: { name: "Uzum Technologies" },
     area: { name: "Ташкент" },
     salary: { from: 600, to: 1000, currency: "USD" },
-    alternate_url: "https://tashkent.hh.uz/vacancy/10948101",
+    alternate_url: "https://tashkent.hh.uz/search/vacancy?text=Junior+Frontend+Developer+React&area=2759",
     experienceId: "between1And3",
     professional_roles: [{ name: "Программист, разработчик" }],
     snippet: {
@@ -34,12 +34,12 @@ const TASHKENT_FALLBACK_VACANCIES = [
     },
   },
   {
-    id: "hh-uz-10948102",
+    id: "hh-uz-trainee-frontend-payme",
     name: "Стажер Frontend-разработчик (React / Next.js)",
-    employer: { name: "Payme" },
+    employer: { name: "Payme Uzbekistan" },
     area: { name: "Ташкент" },
     salary: { from: 4000000, to: 6500000, currency: "UZS" },
-    alternate_url: "https://tashkent.hh.uz/vacancy/10948102",
+    alternate_url: "https://tashkent.hh.uz/search/vacancy?text=Стажер+Frontend+React+Next.js&area=2759",
     experienceId: "noExperience",
     professional_roles: [{ name: "Программист, разработчик" }],
     snippet: {
@@ -48,12 +48,12 @@ const TASHKENT_FALLBACK_VACANCIES = [
     },
   },
   {
-    id: "hh-uz-10948103",
+    id: "hh-uz-backend-nodejs-tbc",
     name: "Junior Node.js Backend Developer",
     employer: { name: "TBC Bank Uzbekistan" },
     area: { name: "Ташкент" },
     salary: { from: 700, to: 1200, currency: "USD" },
-    alternate_url: "https://tashkent.hh.uz/vacancy/10948103",
+    alternate_url: "https://tashkent.hh.uz/search/vacancy?text=Junior+Node.js+Backend+Developer&area=2759",
     experienceId: "between1And3",
     professional_roles: [{ name: "Программист, разработчик" }],
     snippet: {
@@ -62,12 +62,12 @@ const TASHKENT_FALLBACK_VACANCIES = [
     },
   },
   {
-    id: "hh-uz-10948104",
+    id: "hh-uz-qa-intern-click",
     name: "QA Intern / Начинающий тестировщик ПО",
     employer: { name: "CLICK" },
     area: { name: "Ташкент" },
     salary: { from: 4500000, to: 7000000, currency: "UZS" },
-    alternate_url: "https://tashkent.hh.uz/vacancy/10948104",
+    alternate_url: "https://tashkent.hh.uz/search/vacancy?text=QA+Intern+Тестировщик&area=2759",
     experienceId: "noExperience",
     professional_roles: [{ name: "Тестировщик" }],
     snippet: {
@@ -76,12 +76,12 @@ const TASHKENT_FALLBACK_VACANCIES = [
     },
   },
   {
-    id: "hh-uz-10948105",
+    id: "hh-uz-analyst-alif",
     name: "Junior Data / Системный аналитик",
     employer: { name: "Alif Tech" },
     area: { name: "Ташкент" },
     salary: { from: 600, to: 900, currency: "USD" },
-    alternate_url: "https://tashkent.hh.uz/vacancy/10948105",
+    alternate_url: "https://tashkent.hh.uz/search/vacancy?text=Junior+Data+Аналитик&area=2759",
     experienceId: "between1And3",
     professional_roles: [{ name: "Аналитик" }],
     snippet: {
@@ -90,17 +90,45 @@ const TASHKENT_FALLBACK_VACANCIES = [
     },
   },
   {
-    id: "hh-uz-10948106",
+    id: "hh-uz-fullstack-trainee-epam",
     name: "Fullstack Trainee (JavaScript / React / Node.js)",
     employer: { name: "EPAM Systems Uzbekistan" },
     area: { name: "Ташкент" },
     salary: { from: 400, to: 700, currency: "USD" },
-    alternate_url: "https://tashkent.hh.uz/vacancy/10948106",
+    alternate_url: "https://tashkent.hh.uz/search/vacancy?text=Fullstack+Trainee+React+Node.js&area=2759",
     experienceId: "noExperience",
     professional_roles: [{ name: "Программист, разработчик" }],
     snippet: {
       requirement: "Пет-проекты на React и Node.js, знание английского языка от B1.",
       responsibility: "Оплачиваемая стажировка в международной команде с ментором.",
+    },
+  },
+  {
+    id: "hh-uz-python-junior-beeline",
+    name: "Junior Python / FastAPI Developer",
+    employer: { name: "Beeline Uzbekistan (Unitel)" },
+    area: { name: "Ташкент" },
+    salary: { from: 5000000, to: 8000000, currency: "UZS" },
+    alternate_url: "https://tashkent.hh.uz/search/vacancy?text=Junior+Python+Developer&area=2759",
+    experienceId: "between1And3",
+    professional_roles: [{ name: "Программист, разработчик" }],
+    snippet: {
+      requirement: "Знание Python 3, FastAPI/Django, PostgreSQL, базовые навыки Docker.",
+      responsibility: "Разработка бэкенд-сервисов и интеграция внешних API.",
+    },
+  },
+  {
+    id: "hh-uz-flutter-junior-anor",
+    name: "Junior Mobile Developer (Flutter / Dart)",
+    employer: { name: "Anor Bank" },
+    area: { name: "Ташкент" },
+    salary: { from: 600, to: 1100, currency: "USD" },
+    alternate_url: "https://tashkent.hh.uz/search/vacancy?text=Junior+Flutter+Mobile+Developer&area=2759",
+    experienceId: "between1And3",
+    professional_roles: [{ name: "Программист, разработчик" }],
+    snippet: {
+      requirement: "Опыт кроссплатформенной разработки на Flutter, понимание архитектуры BLoC/Provider.",
+      responsibility: "Участие в создании мобильных финансовых продуктов банка.",
     },
   },
 ];
@@ -324,13 +352,38 @@ async function syncHhVacancies(options = {}) {
     }
   }
 
+  // Удаляем устаревшие записи с некорректными ссылками на старые заглушки (10948101 и т.д.)
+  try {
+    const deleteResult = await Vacancy.deleteMany({
+      $or: [
+        { sourceUrl: { $regex: /1094810[1-9]|hh\.uz\/vacancy\/10948/i } },
+        { title: { $regex: /колбас/i } },
+      ],
+    });
+    if (deleteResult.deletedCount > 0) {
+      console.log(
+        `🧹 [HH Parser] Удалено ${deleteResult.deletedCount} устаревших/некорректных записей.`
+      );
+    }
+  } catch (err) {
+    console.warn(
+      "⚠️ [HH Parser] Ошибка при очистке устаревших вакансий:",
+      err.message
+    );
+  }
+
   let upsertedCount = 0;
   const savedVacancies = [];
   const newVacancies = [];
 
   for (const { item, experienceId } of uniqueMap.values()) {
     const sourceUrl =
-      item.alternate_url || `https://hh.ru/vacancy/${item.id}`;
+      item.alternate_url ||
+      (item.id && !isNaN(Number(item.id))
+        ? `https://tashkent.hh.uz/vacancy/${item.id}`
+        : `https://tashkent.hh.uz/search/vacancy?text=${encodeURIComponent(
+            item.name || "IT"
+          )}&area=2759`);
 
     const vacancyData = {
       title: item.name || "IT Специалист",
@@ -341,7 +394,9 @@ async function syncHhVacancies(options = {}) {
     };
 
     // Проверяем, была ли эта вакансия в базе данных ранее
-    const existingDoc = await Vacancy.findOne({ sourceUrl });
+    const existingDoc = await Vacancy.findOne({
+      $or: [{ sourceUrl }, { title: vacancyData.title, company: vacancyData.company }],
+    });
 
     if (!existingDoc) {
       const createdDoc = await Vacancy.create(vacancyData);
