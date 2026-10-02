@@ -26,6 +26,117 @@ router.get("/", async (req, res) => {
 });
 
 /**
+ * GET /api/users/profile
+ * Получение профиля пользователя по ?telegramId=...
+ */
+router.get("/profile", async (req, res) => {
+  try {
+    const telegramId = req.query.telegramId || "guest_dev";
+    let user = await User.findOne({ telegramId: String(telegramId) });
+    if (!user) {
+      return res.status(200).json({
+        telegramId: String(telegramId),
+        username: "Frontend Samurai",
+        github_url: "",
+        portfolio_url: "",
+        about_me: "",
+        rank: "Junior Web Developer",
+        skills: [],
+        level: 1,
+      });
+    }
+    return res.status(200).json(user);
+  } catch (error) {
+    return res.status(500).json({
+      message: "Ошибка при получении профиля пользователя",
+      error: error.message,
+    });
+  }
+});
+
+/**
+ * PUT /api/users/profile
+ * Обновление данных профиля: github_url, portfolio_url, about_me у конкретного пользователя
+ */
+router.put("/profile", async (req, res) => {
+  try {
+    const {
+      telegramId,
+      username,
+      github_url,
+      portfolio_url,
+      about_me,
+      rank,
+      role,
+      skills,
+      level,
+    } = req.body;
+
+    const resolvedTelegramId = String(
+      telegramId || req.query.telegramId || "guest_dev"
+    );
+
+    let user = await User.findOne({ telegramId: resolvedTelegramId });
+
+    if (!user) {
+      user = new User({
+        telegramId: resolvedTelegramId,
+        username: username || "Frontend Samurai",
+        github_url: typeof github_url === "string" ? github_url.trim() : "",
+        portfolio_url:
+          typeof portfolio_url === "string" ? portfolio_url.trim() : "",
+        about_me: typeof about_me === "string" ? about_me.trim() : "",
+        rank:
+          typeof (rank || role) === "string"
+            ? (rank || role).trim()
+            : "Junior Web Developer",
+        skills: Array.isArray(skills) ? skills : [],
+        level: typeof level === "number" ? level : 1,
+      });
+    } else {
+      if (github_url !== undefined) {
+        user.github_url = typeof github_url === "string" ? github_url.trim() : "";
+      }
+      if (portfolio_url !== undefined) {
+        user.portfolio_url =
+          typeof portfolio_url === "string" ? portfolio_url.trim() : "";
+      }
+      if (about_me !== undefined) {
+        user.about_me = typeof about_me === "string" ? about_me.trim() : "";
+      }
+      if (username !== undefined && username) {
+        user.username = username;
+      }
+      if (rank !== undefined) {
+        user.rank = rank;
+      } else if (role !== undefined) {
+        user.rank = role;
+      }
+      if (Array.isArray(skills)) {
+        user.skills = skills;
+      }
+      if (typeof level === "number") {
+        user.level = level;
+      }
+    }
+
+    const updatedUser = await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Данные сохранены!",
+      user: updatedUser,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Ошибка при обновлении профиля",
+      error: error.message,
+    });
+  }
+});
+
+/**
  * POST /api/users
  * Создание нового пользователя или обновление существующего по telegramId
  */
@@ -40,6 +151,9 @@ router.post("/", async (req, res) => {
       level,
       unlockedSkills,
       notificationsEnabled,
+      github_url,
+      portfolio_url,
+      about_me,
     } = req.body;
 
     if (!telegramId || !username) {
@@ -64,6 +178,18 @@ router.post("/", async (req, res) => {
       if (typeof notificationsEnabled === "boolean") {
         existingUser.notificationsEnabled = notificationsEnabled;
       }
+      if (github_url !== undefined) {
+        existingUser.github_url =
+          typeof github_url === "string" ? github_url.trim() : "";
+      }
+      if (portfolio_url !== undefined) {
+        existingUser.portfolio_url =
+          typeof portfolio_url === "string" ? portfolio_url.trim() : "";
+      }
+      if (about_me !== undefined) {
+        existingUser.about_me =
+          typeof about_me === "string" ? about_me.trim() : "";
+      }
 
       const updatedUser = await existingUser.save();
       return res.status(200).json(updatedUser);
@@ -78,6 +204,10 @@ router.post("/", async (req, res) => {
       level: typeof level === "number" ? level : 1,
       unlockedSkills: Array.isArray(unlockedSkills) ? unlockedSkills : [],
       notificationsEnabled,
+      github_url: typeof github_url === "string" ? github_url.trim() : "",
+      portfolio_url:
+        typeof portfolio_url === "string" ? portfolio_url.trim() : "",
+      about_me: typeof about_me === "string" ? about_me.trim() : "",
     });
 
     return res.status(201).json(newUser);

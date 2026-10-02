@@ -40,6 +40,21 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    github_url: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    portfolio_url: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    about_me: {
+      type: String,
+      default: "",
+      trim: true,
+    },
   },
   {
     timestamps: true,
