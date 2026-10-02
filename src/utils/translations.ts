@@ -106,6 +106,9 @@ export const translations = {
     emptyCategoryPrefix: "В категории",
     emptyCategorySuffix: "пока нет вакансий",
     showAllVacancies: "Показать все вакансии",
+    loadMoreVacancies: "Показать еще",
+    loadingMore: "Загрузка...",
+    noMoreVacancies: "Все вакансии загружены",
 
     // Карточка вакансии (VacancyCard)
     badgeNoExp: "Без опыта / Стажировка",
@@ -356,6 +359,9 @@ export const translations = {
     emptyCategoryPrefix: "Toifada",
     emptyCategorySuffix: "hozircha vakansiyalar yo'q",
     showAllVacancies: "Barcha vakansiyalarni ko'rsatish",
+    loadMoreVacancies: "Yana ko'rsatish",
+    loadingMore: "Yuklanmoqda...",
+    noMoreVacancies: "Barcha vakansiyalar yuklandi",
 
     // Карточка вакансии (VacancyCard)
     badgeNoExp: "Tajribasiz / Amaliyot",

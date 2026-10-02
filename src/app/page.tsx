@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useTelegram } from "@/hooks/useTelegram";
 import { useLanguage } from "@/utils/translations";
 import VacancyCard, { type VacancyItem } from "@/components/VacancyCard";
-import { Filter, RefreshCw, Zap } from "lucide-react";
+import { Filter, RefreshCw, Zap, ChevronDown } from "lucide-react";
 
 const FILTER_KEYS = ["all", "frontend", "backend", "noExp"] as const;
 type FilterKey = (typeof FILTER_KEYS)[number];
@@ -14,51 +14,99 @@ export default function VacanciesPage() {
   const { t } = useLanguage();
   const [vacancies, setVacancies] = useState<VacancyItem[]>([]);
   const [activeFilter, setActiveFilter] = useState<FilterKey>("all");
+  const [page, setPage] = useState<number>(1);
+  const [hasMore, setHasMore] = useState<boolean>(false);
+  const [totalCount, setTotalCount] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
   const [errorFlag, setErrorFlag] = useState<boolean>(false);
 
   const apiUrl =
     process.env.NEXT_PUBLIC_API_URL ||
     "https://skilltree-backend-swuh.onrender.com";
 
-  const loadVacancies = useCallback(async () => {
-    setIsLoading(true);
-    setErrorFlag(false);
-
-    try {
-      const response = await fetch(`${apiUrl}/api/vacancies`, {
-        cache: "no-store",
-      });
-      if (!response.ok) {
-        throw new Error(`Status: ${response.status}`);
+  const loadVacancies = useCallback(
+    async (targetPage = 1, append = false) => {
+      if (append) {
+        setIsLoadingMore(true);
+      } else {
+        setIsLoading(true);
+        setErrorFlag(false);
       }
 
-      let data: VacancyItem[] = await response.json();
+      try {
+        const response = await fetch(
+          `${apiUrl}/api/vacancies?page=${targetPage}&limit=15`,
+          {
+            cache: "no-store",
+          }
+        );
+        if (!response.ok) {
+          throw new Error(`Status: ${response.status}`);
+        }
 
-      if (Array.isArray(data) && data.length === 0) {
-        const syncResponse = await fetch(`${apiUrl}/api/vacancies/sync`, {
-          cache: "no-store",
-        });
-        if (syncResponse.ok) {
-          const syncResult = await syncResponse.json();
-          if (Array.isArray(syncResult.vacancies)) {
-            data = syncResult.vacancies;
+        const data = await response.json();
+        let items: VacancyItem[] = Array.isArray(data)
+          ? data
+          : data.vacancies || [];
+        let more: boolean = Array.isArray(data)
+          ? false
+          : Boolean(data.hasMore);
+        let total: number = Array.isArray(data)
+          ? items.length
+          : data.total ?? items.length;
+
+        // Если при первой загрузке база пуста, инициируем синхронизацию
+        if (targetPage === 1 && items.length === 0) {
+          const syncResponse = await fetch(`${apiUrl}/api/vacancies/sync`, {
+            cache: "no-store",
+          });
+          if (syncResponse.ok) {
+            const syncResult = await syncResponse.json();
+            if (Array.isArray(syncResult.vacancies)) {
+              items = syncResult.vacancies.slice(0, 15);
+              total = syncResult.vacancies.length;
+              more = total > 15;
+            }
           }
         }
-      }
 
-      setVacancies(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error("Ошибка при загрузке вакансий:", error);
-      setErrorFlag(true);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [apiUrl]);
+        setVacancies((prev) => {
+          if (!append) return items;
+          const existingIds = new Set(
+            prev.map((v) => v._id || v.id || v.title)
+          );
+          const uniqueNewItems = items.filter(
+            (v) => !existingIds.has(v._id || v.id || v.title)
+          );
+          return [...prev, ...uniqueNewItems];
+        });
+
+        setPage(targetPage);
+        setHasMore(more);
+        setTotalCount(total);
+      } catch (error) {
+        console.error("Ошибка при загрузке вакансий:", error);
+        if (!append) {
+          setErrorFlag(true);
+        }
+      } finally {
+        setIsLoading(false);
+        setIsLoadingMore(false);
+      }
+    },
+    [apiUrl]
+  );
 
   useEffect(() => {
-    loadVacancies();
+    loadVacancies(1, false);
   }, [loadVacancies]);
+
+  const handleLoadMore = () => {
+    if (!isLoadingMore && hasMore) {
+      loadVacancies(page + 1, true);
+    }
+  };
 
   const getFilterLabel = (key: FilterKey) => {
     switch (key) {
@@ -116,9 +164,9 @@ export default function VacanciesPage() {
 
           <button
             type="button"
-            onClick={loadVacancies}
+            onClick={() => loadVacancies(1, false)}
             disabled={isLoading}
-            className="bg-white border-2 border-black px-2.5 py-1 shadow-[2px_2px_0px_#000] text-right shrink-0 -rotate-2 active:rotate-0 transition-transform"
+            className="bg-white border-2 border-black px-2.5 py-1 shadow-[2px_2px_0px_#000] text-right shrink-0 -rotate-2 active:rotate-0 transition-transform cursor-pointer"
           >
             <span className="flex items-center justify-end gap-1 text-[9px] font-black uppercase text-zinc-600">
               <RefreshCw
@@ -127,7 +175,11 @@ export default function VacanciesPage() {
               {t.inDatabase}
             </span>
             <span className="text-sm font-black text-black">
-              {isLoading ? "..." : `${filteredVacancies.length} ${t.itemsCountSuffix}`}
+              {isLoading
+                ? "..."
+                : `${filteredVacancies.length}${
+                    totalCount !== null ? ` / ${totalCount}` : ""
+                  } ${t.itemsCountSuffix}`}
             </span>
           </button>
         </div>
@@ -153,7 +205,7 @@ export default function VacanciesPage() {
             <button
               type="button"
               onClick={() => setActiveFilter("all")}
-              className="text-[11px] font-black underline decoration-2 text-manga-pink"
+              className="text-[11px] font-black underline decoration-2 text-manga-pink cursor-pointer"
             >
               {t.resetFilter}
             </button>
@@ -168,7 +220,7 @@ export default function VacanciesPage() {
                 key={key}
                 type="button"
                 onClick={() => setActiveFilter(key)}
-                className={`shrink-0 px-4 py-2 text-xs font-black uppercase tracking-wide border-[2.5px] border-black transition-all select-none ${
+                className={`shrink-0 px-4 py-2 text-xs font-black uppercase tracking-wide border-[2.5px] border-black transition-all select-none cursor-pointer ${
                   isActive
                     ? "bg-manga-lime text-black shadow-[4px_4px_0px_#000] -translate-y-0.5"
                     : "bg-white text-black shadow-[2px_2px_0px_#000] hover:bg-manga-yellow/40 active:translate-x-[1px] active:translate-y-[1px]"
@@ -181,7 +233,7 @@ export default function VacanciesPage() {
         </div>
       </section>
 
-      {/* Состояние загрузки */}
+      {/* Состояние первичной загрузки */}
       {isLoading && (
         <section aria-label="Загрузка вакансий" className="space-y-4">
           <div className="bg-manga-cyan border-[3px] border-black shadow-[4px_4px_0px_#000] p-3 flex items-center gap-2.5">
@@ -220,8 +272,8 @@ export default function VacanciesPage() {
           </p>
           <button
             type="button"
-            onClick={loadVacancies}
-            className="px-4 py-2 bg-manga-yellow border-2 border-black shadow-[2px_2px_0px_#000] text-xs font-black uppercase"
+            onClick={() => loadVacancies(1, false)}
+            className="px-4 py-2 bg-manga-yellow border-2 border-black shadow-[2px_2px_0px_#000] text-xs font-black uppercase cursor-pointer"
           >
             {t.retryButton}
           </button>
@@ -232,13 +284,46 @@ export default function VacanciesPage() {
       {!isLoading && !errorFlag && (
         <section aria-label="Список вакансий" className="space-y-4">
           {filteredVacancies.length > 0 ? (
-            filteredVacancies.map((vacancy, index) => (
-              <VacancyCard
-                key={vacancy._id || vacancy.id || `${vacancy.title}-${index}`}
-                vacancy={vacancy}
-                index={index}
-              />
-            ))
+            <>
+              {filteredVacancies.map((vacancy, index) => (
+                <VacancyCard
+                  key={vacancy._id || vacancy.id || `${vacancy.title}-${index}`}
+                  vacancy={vacancy}
+                  index={index}
+                />
+              ))}
+
+              {/* Кнопка пагинации "Показать еще", скрывается если hasMore: false */}
+              {hasMore && (
+                <div className="pt-2 pb-6">
+                  <button
+                    type="button"
+                    onClick={handleLoadMore}
+                    disabled={isLoadingMore}
+                    className="w-full py-3.5 px-4 bg-manga-yellow hover:bg-yellow-400 border-[3px] border-black shadow-[4px_4px_0px_#000] font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 active:translate-x-[2px] active:translate-y-[2px] active:shadow-[1px_1px_0px_#000] transition-all disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+                  >
+                    {isLoadingMore ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin stroke-[2.5]" />
+                        <span>{t.loadingMore}</span>
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDown className="w-4 h-4 stroke-[3]" />
+                        <span>{t.loadMoreVacancies}</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
+
+              {/* Индикатор конца списка */}
+              {!hasMore && vacancies.length > 0 && (
+                <div className="text-center py-4 text-xs font-black uppercase tracking-wider text-zinc-500">
+                  • {t.noMoreVacancies} •
+                </div>
+              )}
+            </>
           ) : (
             <div className="bg-white border-[3px] border-black shadow-[4px_4px_0px_#000] p-5 text-center space-y-2">
               <p className="text-sm font-black uppercase">
@@ -247,7 +332,7 @@ export default function VacanciesPage() {
               <button
                 type="button"
                 onClick={() => setActiveFilter("all")}
-                className="inline-block px-4 py-2 bg-manga-lime border-2 border-black shadow-[2px_2px_0px_#000] text-xs font-black uppercase"
+                className="inline-block px-4 py-2 bg-manga-lime border-2 border-black shadow-[2px_2px_0px_#000] text-xs font-black uppercase cursor-pointer"
               >
                 {t.showAllVacancies}
               </button>

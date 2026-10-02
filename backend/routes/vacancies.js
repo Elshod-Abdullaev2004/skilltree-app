@@ -46,16 +46,35 @@ router.get("/sync", async (_req, res) => {
 
 /**
  * GET /api/vacancies
- * Получение списка всех вакансий с опциональной фильтрацией по тегу (?tag=React)
+ * Получение списка вакансий с пагинацией (?page=1&limit=15) и опциональной фильтрацией по тегу (?tag=React)
  */
 router.get("/", async (req, res) => {
   try {
     const { tag } = req.query;
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limit = Math.max(1, parseInt(req.query.limit, 10) || 15);
+    const skip = (page - 1) * limit;
+
     const filter =
       tag && tag !== "Все" ? { tags: { $in: [String(tag)] } } : {};
 
-    const vacancies = await Vacancy.find(filter).sort({ createdAt: -1 });
-    return res.status(200).json(vacancies);
+    const [total, vacancies] = await Promise.all([
+      Vacancy.countDocuments(filter),
+      Vacancy.find(filter)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+    ]);
+
+    const hasMore = skip + vacancies.length < total;
+
+    return res.status(200).json({
+      vacancies,
+      total,
+      page,
+      limit,
+      hasMore,
+    });
   } catch (error) {
     return res.status(500).json({
       message: "Ошибка при получении списка вакансий",
