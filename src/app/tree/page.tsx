@@ -173,8 +173,9 @@ export default function TreePage() {
 
   return (
     <div className="space-y-5">
-      {/* Модальное окно проверки навыка */}
+      {/* Модальное окно проверки навыка с генерацией от ИИ */}
       <QuizModal
+        skill={activeSkillQuizKey}
         quiz={activeQuiz}
         onClose={() => setActiveSkillQuizKey(null)}
         onSuccess={handleQuizSuccess}

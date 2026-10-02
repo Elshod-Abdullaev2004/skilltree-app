@@ -32,12 +32,19 @@ if (
   process.env.BOT_TOKEN = rootEnv.parsed.BOT_TOKEN;
 }
 
+if (backendEnv.parsed?.GEMINI_API_KEY) {
+  process.env.GEMINI_API_KEY = backendEnv.parsed.GEMINI_API_KEY;
+} else if (rootEnv.parsed?.GEMINI_API_KEY) {
+  process.env.GEMINI_API_KEY = rootEnv.parsed.GEMINI_API_KEY;
+}
+
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 
 const usersRouter = require("./routes/users");
 const vacanciesRouter = require("./routes/vacancies");
+const questionsRouter = require("./routes/questions");
 const { initHhCronJob } = require("./services/hhParser");
 const { startBot } = require("./bot");
 
@@ -68,6 +75,7 @@ app.get("/api/health", (_req, res) => {
 // Основные REST API маршруты
 app.use("/api/users", usersRouter);
 app.use("/api/vacancies", vacanciesRouter);
+app.use("/api/questions", questionsRouter);
 
 // Подключение к MongoDB через Mongoose с использованием process.env.MONGO_URI
 mongoose

@@ -165,6 +165,9 @@ export const translations = {
     quizConfirmTitle: "Подтверди:",
     quizMentorQuestion: "ВОПРОС МЕНТОРА:",
     quizTryAgain: "Попробуй еще раз!",
+    quizAiGenerating: "🤖 Нейросеть генерирует вопрос...",
+    quizAiGeneratingSub: "Gemini 2.5 Flash готовит практический тест...",
+    quizAiBadge: "GEMINI 2.5 FLASH • AI GENERATED",
     quizzes: {
       HTML: {
         question:
@@ -388,6 +391,9 @@ export const translations = {
     quizConfirmTitle: "Tasdiqlang:",
     quizMentorQuestion: "MENTOR SAVOLI:",
     quizTryAgain: "Yana bir bor urinib ko'ring!",
+    quizAiGenerating: "🤖 Sun'iy intellekt savol tayyorlamoqda...",
+    quizAiGeneratingSub: "Gemini 2.5 Flash amaliy test tayyorlamoqda...",
+    quizAiBadge: "GEMINI 2.5 FLASH • AI GENERATED",
     quizzes: {
       HTML: {
         question:
