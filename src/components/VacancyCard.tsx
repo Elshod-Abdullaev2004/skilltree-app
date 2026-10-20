@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Building2, ExternalLink, Flame, MapPin, Sparkles } from "lucide-react";
 import { useLanguage } from "@/utils/translations";
 import { trackEvent } from "@/utils/analytics";
+import CoverLetterModal from "@/components/CoverLetterModal";
 
 export interface VacancyItem {
   _id?: string;
@@ -51,6 +52,7 @@ export default function VacancyCard({ vacancy, index = 0 }: VacancyCardProps) {
 
   const vacancyId = vacancy._id || vacancy.id || vacancy.title;
   const hasTrackedViewRef = useRef(false);
+  const [isCoverLetterOpen, setIsCoverLetterOpen] = useState(false);
 
   // Шаг 2 воронки: vacancy_viewed (просмотр карточки стажировки)
   useEffect(() => {
@@ -64,14 +66,9 @@ export default function VacancyCard({ vacancy, index = 0 }: VacancyCardProps) {
     }
   }, [vacancyId, vacancy.title, vacancy.company]);
 
-  const handleApplyClick = () => {
-    // Шаг 4 воронки: vacancy_apply_clicked (клик по кнопке "Откликнуться")
-    trackEvent("vacancy_apply_clicked", {
-      vacancy_id: vacancyId,
-      title: vacancy.title,
-      company: vacancy.company,
-      url: directUrl,
-    });
+  const handleApplyClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsCoverLetterOpen(true);
   };
 
   return (
@@ -148,24 +145,28 @@ export default function VacancyCard({ vacancy, index = 0 }: VacancyCardProps) {
           </div>
         )}
 
-        {/* Акцентная кнопка "Откликнуться" / "Topshirish" */}
+        {/* Акцентная кнопка "Откликнуться" / "Topshirish" с генерацией сопроводительного письма */}
         <div className="pt-1">
-          <a
-            href={directUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleApplyClick();
-            }}
-            className="w-full py-3 px-4 bg-manga-orange text-white border-[3px] border-black shadow-[4px_4px_0px_#000] font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-manga-pink active:translate-x-[2px] active:translate-y-[2px] active:shadow-[1px_1px_0px_#000] transition-all"
+          <button
+            type="button"
+            onClick={handleApplyClick}
+            className="w-full py-3 px-4 bg-manga-orange text-white border-[3px] border-black shadow-[4px_4px_0px_#000] font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-manga-pink active:translate-x-[2px] active:translate-y-[2px] active:shadow-[1px_1px_0px_#000] transition-all cursor-pointer"
           >
-            <ExternalLink className="w-4 h-4 stroke-[2.5]" />
+            <Sparkles className="w-4 h-4 stroke-[2.5]" />
             <span>{t.applyButton}</span>
-            <Sparkles className="w-4 h-4 stroke-[2.5] ml-auto" />
-          </a>
+            <ExternalLink className="w-4 h-4 stroke-[2.5] ml-auto" />
+          </button>
         </div>
       </div>
+
+      {/* Модальное окно генерации сопроводительного письма */}
+      {isCoverLetterOpen && (
+        <CoverLetterModal
+          vacancy={vacancy}
+          directUrl={directUrl}
+          onClose={() => setIsCoverLetterOpen(false)}
+        />
+      )}
     </article>
   );
 }

@@ -65,6 +65,7 @@ router.get("/funnel", async (_req, res) => {
       "skill_clicked",
       "vacancy_viewed",
       "quiz_completed",
+      "cover_letter_requested",
       "vacancy_apply_clicked",
       "pro_clicked",
     ];

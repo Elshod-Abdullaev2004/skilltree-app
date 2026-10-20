@@ -46,6 +46,7 @@ const usersRouter = require("./routes/users");
 const vacanciesRouter = require("./routes/vacancies");
 const questionsRouter = require("./routes/questions");
 const analyticsRouter = require("./routes/analytics");
+const aiRouter = require("./routes/ai");
 const { initHhCronJob } = require("./services/hhParser");
 const { startBot } = require("./bot");
 
@@ -83,6 +84,7 @@ app.use("/api/users", usersRouter);
 app.use("/api/vacancies", vacanciesRouter);
 app.use("/api/questions", questionsRouter);
 app.use("/api/analytics", analyticsRouter);
+app.use("/api/ai", aiRouter);
 
 // Подключение к MongoDB через Mongoose с использованием process.env.MONGO_URI
 mongoose

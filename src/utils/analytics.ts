@@ -13,6 +13,7 @@ export type FunnelEventType =
   | "quiz_completed"
   | "vacancy_apply_clicked"
   | "pro_clicked"
+  | "cover_letter_requested"
   | (string & {});
 
 /**

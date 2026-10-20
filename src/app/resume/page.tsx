@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { useTelegram } from "@/hooks/useTelegram";
 import { useLanguage } from "@/utils/translations";
+import { trackEvent } from "@/utils/analytics";
+import { showToast } from "@/utils/toast";
 import {
   Sparkles,
   Copy,
@@ -18,6 +20,9 @@ import {
   Loader2,
   CheckCircle2,
   AlertCircle,
+  Bot,
+  Building2,
+  Send,
 } from "lucide-react";
 
 export default function ResumePage() {
@@ -47,6 +52,15 @@ export default function ResumePage() {
   const [isLoadingProfile, setIsLoadingProfile] = useState(isLoading);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+
+  // Состояние генератора сопроводительных писем (AI Cover Letter)
+  const [targetJobTitle, setTargetJobTitle] = useState(
+    "Junior Frontend Developer"
+  );
+  const [targetCompany, setTargetCompany] = useState("IT Компания");
+  const [isGeneratingCoverLetter, setIsGeneratingCoverLetter] = useState(false);
+  const [coverLetterText, setCoverLetterText] = useState("");
+  const [copiedCoverLetter, setCopiedCoverLetter] = useState(false);
 
   // При переключении языка обновляем дефолтный текст пет-проектов, если пользователь его еще не менял вручную
   useEffect(() => {
@@ -158,6 +172,67 @@ ${r.tplHighlights}`;
       setTimeout(() => setCopied(false), 2500);
     } catch {
       setCopied(true);
+    }
+  };
+
+  const handleGenerateCoverLetter = async () => {
+    setIsGeneratingCoverLetter(true);
+    trackEvent("cover_letter_requested", {
+      vacancy: targetJobTitle,
+      company: targetCompany,
+    });
+
+    try {
+      const res = await fetch(`${apiUrl}/api/ai/cover-letter`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(initData
+            ? {
+                Authorization: `Bearer ${initData}`,
+                "x-telegram-init-data": initData,
+              }
+            : { "x-guest-mode": "true" }),
+        },
+        body: JSON.stringify({
+          title: targetJobTitle,
+          company: targetCompany,
+          language: lang,
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.coverLetter) {
+          setCoverLetterText(data.coverLetter);
+          showToast(
+            lang === "uz"
+              ? "Kuzatuv xati yaratildi!"
+              : "Сопроводительное письмо создано!"
+          );
+        }
+      }
+    } catch (e) {
+      console.error("Cover letter error:", e);
+    } finally {
+      setIsGeneratingCoverLetter(false);
+    }
+  };
+
+  const handleCopyCoverLetter = async () => {
+    try {
+      if (typeof navigator !== "undefined" && navigator.clipboard) {
+        await navigator.clipboard.writeText(coverLetterText);
+      }
+      setCopiedCoverLetter(true);
+      showToast(
+        lang === "uz"
+          ? "Kuzatuv xati nusxalandi!"
+          : "Сопроводительное письмо скопировано в буфер!"
+      );
+      setTimeout(() => setCopiedCoverLetter(false), 2000);
+    } catch (e) {
+      console.warn("Copy error:", e);
     }
   };
 
@@ -430,6 +505,123 @@ ${r.tplHighlights}`;
           <pre className="whitespace-pre-wrap font-mono text-xs font-bold leading-relaxed text-black bg-white border-2 border-black p-3 shadow-[2px_2px_0px_#000]">
             {displayResume}
           </pre>
+        </div>
+      </section>
+
+      {/* Секция: ИИ Генератор сопроводительных писем (AI Cover Letter Generator) */}
+      <section
+        aria-label="AI Cover Letter Generator"
+        className="bg-white border-[3px] border-black shadow-[4px_4px_0px_#000] overflow-hidden"
+      >
+        <div className="bg-manga-yellow border-b-[3px] border-black px-3.5 py-2.5 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="w-7 h-7 bg-black text-manga-yellow border-2 border-black flex items-center justify-center shadow-[1px_1px_0px_#000]">
+              <Sparkles className="w-4 h-4 stroke-[2.5]" />
+            </span>
+            <div>
+              <span className="block text-[9px] font-black uppercase tracking-wider text-zinc-900">
+                GEMINI 2.5 FLASH
+              </span>
+              <h2 className="text-sm font-black uppercase text-black leading-none">
+                {lang === "uz" ? "AI Kuzatuv xati" : "ИИ Сопроводительное письмо"}
+              </h2>
+            </div>
+          </div>
+          <span className="bg-black text-manga-lime text-[10px] font-black px-2 py-0.5 uppercase border border-black">
+            HIGH CONVERSION
+          </span>
+        </div>
+
+        <div className="p-3.5 space-y-3 bg-halftone">
+          <p className="text-xs font-bold text-zinc-800 bg-white border-2 border-black p-2.5 shadow-[2px_2px_0px_#000]">
+            {lang === "uz"
+              ? "Vakansiya va kompaniya nomini kiriting. Gemini neyrotarmog'i profilingiz asosida rekruterlar uchun qisqa va kuchli xat yozib beradi."
+              : "Укажите вакансию и компанию. Нейросеть Gemini составит короткое, цепляющее сопроводительное письмо на основе вашего GitHub и стека."}
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div>
+              <label className="block text-[10px] font-black uppercase mb-1">
+                {lang === "uz" ? "Vakansiya nomi" : "Вакансия"}
+              </label>
+              <input
+                type="text"
+                value={targetJobTitle}
+                onChange={(e) => setTargetJobTitle(e.target.value)}
+                placeholder="Junior Frontend Developer"
+                className="w-full bg-white border-2 border-black px-3 py-2 text-xs font-bold focus:outline-none focus:bg-manga-yellow/20 shadow-[1px_1px_0px_#000]"
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-black uppercase mb-1">
+                {lang === "uz" ? "Kompaniya nomi" : "Компания"}
+              </label>
+              <input
+                type="text"
+                value={targetCompany}
+                onChange={(e) => setTargetCompany(e.target.value)}
+                placeholder="Яндекс / EPAM / Click"
+                className="w-full bg-white border-2 border-black px-3 py-2 text-xs font-bold focus:outline-none focus:bg-manga-yellow/20 shadow-[1px_1px_0px_#000]"
+              />
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleGenerateCoverLetter}
+            disabled={isGeneratingCoverLetter}
+            className="w-full py-3 px-4 bg-manga-orange hover:bg-manga-pink text-white border-[3px] border-black font-black text-xs uppercase tracking-wider shadow-[4px_4px_0px_#000] active:translate-x-[2px] active:translate-y-[2px] transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75"
+          >
+            {isGeneratingCoverLetter ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin stroke-[2.5]" />
+                <span>{lang === "uz" ? "AI yozmoqda..." : "ИИ пишет письмо..."}</span>
+              </>
+            ) : (
+              <>
+                <Bot className="w-4 h-4 stroke-[2.5]" />
+                <span>
+                  {lang === "uz"
+                    ? "Kuzatuv xatini yaratish"
+                    : "Сгенерировать сопроводительное письмо"}
+                </span>
+              </>
+            )}
+          </button>
+
+          {coverLetterText && (
+            <div className="space-y-2 pt-2 animate-in fade-in duration-200">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase text-zinc-700">
+                  {lang === "uz" ? "Natija:" : "Готовое письмо:"}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleCopyCoverLetter}
+                  className="inline-flex items-center gap-1 bg-white border-2 border-black px-2.5 py-1 text-[10px] font-black uppercase shadow-[2px_2px_0px_#000] hover:bg-manga-lime transition-colors cursor-pointer"
+                >
+                  {copiedCoverLetter ? (
+                    <>
+                      <Check className="w-3 h-3 text-green-700 stroke-[3]" />
+                      <span>{lang === "uz" ? "Nusxalandi" : "Скопировано"}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3 h-3 stroke-[2.5]" />
+                      <span>{lang === "uz" ? "Nusxa olish" : "Копировать"}</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              <textarea
+                value={coverLetterText}
+                onChange={(e) => setCoverLetterText(e.target.value)}
+                rows={7}
+                className="w-full bg-white border-2 border-black p-3 text-xs font-bold leading-relaxed text-black shadow-[2px_2px_0px_#000] focus:outline-none focus:bg-manga-yellow/10 resize-none font-sans"
+              />
+            </div>
+          )}
         </div>
       </section>
     </div>
