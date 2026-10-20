@@ -163,7 +163,12 @@ export function TelegramProvider({ children }: { children: React.ReactNode }) {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            ...(rawInitData ? { "x-telegram-init-data": rawInitData } : {}),
+            ...(rawInitData
+              ? {
+                  Authorization: `Bearer ${rawInitData}`,
+                  "x-telegram-init-data": rawInitData,
+                }
+              : { "x-guest-mode": "true" }),
           },
           body: JSON.stringify({
             telegramId: resolvedTelegramId,
@@ -233,7 +238,12 @@ export function TelegramProvider({ children }: { children: React.ReactNode }) {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            ...(initData ? { "x-telegram-init-data": initData } : {}),
+            ...(initData
+              ? {
+                  Authorization: `Bearer ${initData}`,
+                  "x-telegram-init-data": initData,
+                }
+              : { "x-guest-mode": "true" }),
           },
           body: JSON.stringify({
             telegramId: resolvedTelegramId,

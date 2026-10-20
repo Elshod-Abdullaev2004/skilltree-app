@@ -1,14 +1,15 @@
 const express = require("express");
 const Vacancy = require("../models/Vacancy");
 const { syncHhVacancies } = require("../services/hhParser");
+const telegramAuth = require("../middleware/telegramAuth");
 
 const router = express.Router();
 
 /**
  * GET /api/vacancies/reset
- * Очистка коллекции вакансий и полный перезапуск парсера с нуля с сохранением прямых ссылок
+ * Очистка коллекции вакансий и полный перезапуск парсера с нуля (защищено telegramAuth)
  */
-router.get("/reset", async (_req, res) => {
+router.get("/reset", telegramAuth, async (_req, res) => {
   try {
     const deleteResult = await Vacancy.deleteMany({});
     const result = await syncHhVacancies({ forceReset: true });
@@ -27,9 +28,9 @@ router.get("/reset", async (_req, res) => {
 
 /**
  * GET /api/vacancies/sync
- * Ручной запуск парсера вакансий HeadHunter (Ташкент, IT, noExperience + between1And3)
+ * Ручной запуск парсера вакансий HeadHunter (защищено telegramAuth)
  */
-router.get("/sync", async (_req, res) => {
+router.get("/sync", telegramAuth, async (_req, res) => {
   try {
     const result = await syncHhVacancies();
     return res.status(200).json({
@@ -92,9 +93,9 @@ router.get("/", async (req, res) => {
 
 /**
  * POST /api/vacancies
- * Добавление новой вакансии в базу данных
+ * Добавление новой вакансии в базу данных (защищено telegramAuth)
  */
-router.post("/", async (req, res) => {
+router.post("/", telegramAuth, async (req, res) => {
   try {
     const { title, company, salary, sourceUrl, tags } = req.body;
 

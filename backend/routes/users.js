@@ -1,5 +1,6 @@
 const express = require("express");
 const User = require("../models/User");
+const telegramAuth = require("../middleware/telegramAuth");
 
 const router = express.Router();
 
@@ -27,11 +28,11 @@ router.get("/", async (req, res) => {
 
 /**
  * GET /api/users/profile
- * Получение профиля пользователя по ?telegramId=...
+ * Получение профиля пользователя по ?telegramId=... (защищено telegramAuth)
  */
-router.get("/profile", async (req, res) => {
+router.get("/profile", telegramAuth, async (req, res) => {
   try {
-    const telegramId = req.query.telegramId || req.query.telegram_id || "guest_dev";
+    const telegramId = req.telegramId || req.query.telegramId || req.query.telegram_id || "guest_dev";
     let user = await User.findOne({ telegramId: String(telegramId) });
     if (!user) {
       return res.status(200).json({
@@ -56,9 +57,9 @@ router.get("/profile", async (req, res) => {
 
 /**
  * PUT /api/users/profile
- * Обновление данных профиля: github_url, portfolio_url, about_me у конкретного пользователя
+ * Обновление данных профиля: github_url, portfolio_url, about_me у конкретного пользователя (защищено telegramAuth)
  */
-router.put("/profile", async (req, res) => {
+router.put("/profile", telegramAuth, async (req, res) => {
   try {
     const {
       telegramId,
@@ -74,7 +75,8 @@ router.put("/profile", async (req, res) => {
     } = req.body;
 
     const resolvedTelegramId = String(
-      telegramId ||
+      req.telegramId ||
+        telegramId ||
         telegram_id ||
         req.query.telegramId ||
         req.query.telegram_id ||
@@ -229,9 +231,9 @@ router.post("/", async (req, res) => {
 
 /**
  * POST /api/users/skills
- * Добавление навыка в профиль пользователя и обновление его уровня (level)
+ * Добавление навыка в профиль пользователя и обновление его уровня (level) (защищено telegramAuth)
  */
-router.post("/skills", async (req, res) => {
+router.post("/skills", telegramAuth, async (req, res) => {
   try {
     const { telegramId, telegram_id, username, skill } = req.body;
 
@@ -241,7 +243,9 @@ router.post("/skills", async (req, res) => {
       });
     }
 
-    const resolvedTelegramId = String(telegramId || telegram_id || "guest_dev");
+    const resolvedTelegramId = String(
+      req.telegramId || telegramId || telegram_id || "guest_dev"
+    );
     const resolvedUsername = username || "Frontend Samurai";
 
     let user = await User.findOne({ telegramId: resolvedTelegramId });

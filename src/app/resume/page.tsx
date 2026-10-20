@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 
 export default function ResumePage() {
-  const { user, dbUser, telegramId, username, setDbUser, isLoading } =
+  const { user, dbUser, telegramId, username, setDbUser, isLoading, initData } =
     useTelegram();
   const { lang, t } = useLanguage();
   const r = t.resume;
@@ -91,6 +91,12 @@ export default function ResumePage() {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
+          ...(initData
+            ? {
+                Authorization: `Bearer ${initData}`,
+                "x-telegram-init-data": initData,
+              }
+            : { "x-guest-mode": "true" }),
         },
         body: JSON.stringify({
           telegramId,
@@ -100,6 +106,7 @@ export default function ResumePage() {
           about_me: aboutMe,
           rank: role,
           role: role,
+          initData,
         }),
       });
 

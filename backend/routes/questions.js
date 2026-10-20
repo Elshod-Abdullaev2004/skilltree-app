@@ -1,6 +1,7 @@
 const express = require("express");
 const axios = require("axios");
 const { GoogleGenAI } = require("@google/genai");
+const telegramAuth = require("../middleware/telegramAuth");
 
 const router = express.Router();
 
@@ -1000,7 +1001,7 @@ Qoidalar:
   });
 }
 
-router.get("/generate", generateHandler);
-router.get("/", generateHandler);
+router.get("/generate", telegramAuth, generateHandler);
+router.get("/", telegramAuth, generateHandler);
 
 module.exports = router;

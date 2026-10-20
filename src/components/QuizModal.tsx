@@ -15,6 +15,7 @@ import {
   Zap,
 } from "lucide-react";
 import { useLanguage } from "@/utils/translations";
+import { useTelegram } from "@/context/TelegramProvider";
 
 export interface QuestionItem {
   question: string;
@@ -44,6 +45,7 @@ export default function QuizModal({
   onSuccess,
 }: QuizModalProps) {
   const { lang, t } = useLanguage();
+  const { initData } = useTelegram();
   const [loading, setLoading] = useState<boolean>(true);
   const [loadingStep, setLoadingStep] = useState<number>(0);
   const [questions, setQuestions] = useState<QuestionItem[]>([]);
@@ -102,6 +104,14 @@ export default function QuizModal({
           {
             signal: controller.signal,
             cache: "no-store",
+            headers: {
+              ...(initData
+                ? {
+                    Authorization: `Bearer ${initData}`,
+                    "x-telegram-init-data": initData,
+                  }
+                : { "x-guest-mode": "true" }),
+            },
           }
         );
 

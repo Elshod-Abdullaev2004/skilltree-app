@@ -54,7 +54,8 @@ export function broadcastLevelUpdate(level: number, skills: string[]) {
 }
 
 export default function TreePage() {
-  const { user, dbUser, telegramId, username, setDbUser } = useTelegram();
+  const { user, dbUser, telegramId, username, setDbUser, initData } =
+    useTelegram();
   const { t } = useLanguage();
   const [learnedSkills, setLearnedSkills] = useState<string[]>([]);
   const [level, setLevel] = useState<number>(1);
@@ -114,11 +115,18 @@ export default function TreePage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          ...(initData
+            ? {
+                Authorization: `Bearer ${initData}`,
+                "x-telegram-init-data": initData,
+              }
+            : { "x-guest-mode": "true" }),
         },
         body: JSON.stringify({
           telegramId,
           username,
           skill: skillName,
+          initData,
         }),
       });
 
