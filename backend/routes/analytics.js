@@ -66,6 +66,7 @@ router.get("/funnel", async (_req, res) => {
       "vacancy_viewed",
       "quiz_completed",
       "vacancy_apply_clicked",
+      "pro_clicked",
     ];
 
     const counts = await Event.aggregate([
