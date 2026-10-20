@@ -38,6 +38,7 @@ router.get("/profile", telegramAuth, async (req, res) => {
       return res.status(200).json({
         telegramId: String(telegramId),
         username: "Frontend Samurai",
+        language: "ru",
         github_url: "",
         portfolio_url: "",
         about_me: "",
@@ -125,6 +126,9 @@ router.put("/profile", telegramAuth, async (req, res) => {
       if (typeof level === "number") {
         user.level = level;
       }
+      if (req.body.language === "ru" || req.body.language === "uz") {
+        user.language = req.body.language;
+      }
     }
 
     const updatedUser = await user.save();
@@ -176,7 +180,8 @@ router.post("/", async (req, res) => {
 
     if (existingUser) {
       if (username !== undefined) existingUser.username = username;
-      if (language === "ru" || language === "uz") {
+      // ВАЖНО: сохраняем выбор языка из Telegram-бота, если он уже установлен в БД!
+      if (!existingUser.language && (language === "ru" || language === "uz")) {
         existingUser.language = language;
       }
       if (rank !== undefined) existingUser.rank = rank;

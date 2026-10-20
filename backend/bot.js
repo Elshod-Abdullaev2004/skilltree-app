@@ -139,6 +139,26 @@ function startBot() {
   bot.action("lang_ru", (ctx) => handleLanguageSelection(ctx, "ru"));
   bot.action("lang_uz", (ctx) => handleLanguageSelection(ctx, "uz"));
 
+  // Поддержка текстового выбора языка и команды /lang
+  bot.command(["lang", "language"], async (ctx) => {
+    await ctx.reply(
+      "Выберите язык / Tilni tanlang:",
+      Markup.inlineKeyboard([
+        [
+          Markup.button.callback("🇷🇺 Русский", "lang_ru"),
+          Markup.button.callback("🇺🇿 O'zbekcha", "lang_uz"),
+        ],
+      ])
+    );
+  });
+
+  bot.hears(/^(🇷🇺\s*)?(русский|russian|ru)$/i, (ctx) =>
+    handleLanguageSelection(ctx, "ru")
+  );
+  bot.hears(/^(🇺🇿\s*)?(o['`’]?zbek(cha)?|uzbek|uz)$/i, (ctx) =>
+    handleLanguageSelection(ctx, "uz")
+  );
+
   // 3. Скрытая команда /force_parse для внеочередного запуска парсера и проверки push-уведомлений
   bot.command("force_parse", async (ctx) => {
     const from = ctx.from || {};

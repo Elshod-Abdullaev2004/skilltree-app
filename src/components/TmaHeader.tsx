@@ -31,10 +31,7 @@ export default function TmaHeader() {
         } catch {}
       }
 
-      if (
-        !localStorage.getItem("skilltree_lang") &&
-        (dbUser.language === "ru" || dbUser.language === "uz")
-      ) {
+      if (dbUser.language === "ru" || dbUser.language === "uz") {
         setLanguage(dbUser.language);
       }
     }

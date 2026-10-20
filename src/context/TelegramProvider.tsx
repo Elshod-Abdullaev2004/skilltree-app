@@ -9,6 +9,7 @@ import React, {
   useMemo,
 } from "react";
 import { trackEvent } from "@/utils/analytics";
+import { setAppLanguage, type Language } from "@/utils/translations";
 
 export interface TelegramUser {
   id: number;
@@ -188,6 +189,11 @@ export function TelegramProvider({ children }: { children: React.ReactNode }) {
           const data: DbUser = await response.json();
           if (isMounted && data) {
             setDbUser(data);
+
+            // Автоматическое применение языка, выбранного пользователем в Telegram-боте
+            const dbLang = data.language;
+            setAppLanguage((dbLang as Language) || "ru");
+
             if (typeof data.level === "number") {
               try {
                 localStorage.setItem("skilltree_level", String(data.level));

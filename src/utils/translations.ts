@@ -5,6 +5,20 @@ import { sendTelegramUserToBackend } from "@/hooks/useTelegram";
 
 export type Language = "ru" | "uz";
 
+export function setAppLanguage(nextLang: Language) {
+  if (typeof window === "undefined") return;
+  localStorage.setItem("skilltree_lang", nextLang);
+  window.dispatchEvent(
+    new CustomEvent("skilltree:lang-updated", {
+      detail: { lang: nextLang },
+    })
+  );
+  const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+  if (tgUser) {
+    sendTelegramUserToBackend(tgUser, { language: nextLang });
+  }
+}
+
 export function useLanguage() {
   const [lang, setLangState] = useState<Language>("ru");
 
