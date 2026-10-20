@@ -3,6 +3,7 @@ import Script from "next/script";
 import "./globals.css";
 import TmaHeader from "@/components/TmaHeader";
 import BottomNav from "@/components/BottomNav";
+import Toast from "@/components/Toast";
 import { TelegramProvider } from "@/context/TelegramProvider";
 
 export const metadata: Metadata = {
@@ -34,6 +35,7 @@ export default function RootLayout({
         {/* Strict Mobile-First Telegram Mini App Container with Global Context */}
         <div className="relative mx-auto w-full max-w-[430px] min-h-dvh bg-halftone border-x-[3px] border-manga-ink flex flex-col shadow-[0_0_40px_rgba(0,0,0,0.6)]">
           <TelegramProvider>
+            <Toast />
             <TmaHeader />
             <main className="flex-1 px-3.5 pt-4 pb-28">{children}</main>
             <BottomNav />

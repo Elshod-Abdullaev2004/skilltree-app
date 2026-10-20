@@ -2,8 +2,20 @@ const express = require("express");
 const axios = require("axios");
 const { GoogleGenAI } = require("@google/genai");
 const telegramAuth = require("../middleware/telegramAuth");
+const User = require("../models/User");
 
 const router = express.Router();
+
+function isSameDay(d1, d2) {
+  if (!d1 || !d2) return false;
+  const date1 = new Date(d1);
+  const date2 = new Date(d2);
+  return (
+    date1.getFullYear() === date2.getFullYear() &&
+    date1.getMonth() === date2.getMonth() &&
+    date1.getDate() === date2.getDate()
+  );
+}
 
 // Полный словарь из 10 вопросов для каждого навыка (Fallback)
 const FALLBACK_10_QUESTIONS = {
@@ -870,6 +882,59 @@ async function generateHandler(req, res) {
   const language = (req.query.language || "ru").toString().toLowerCase().trim();
   const isUz = language === "uz";
 
+  // Проверка суточного лимита на ИИ-экзамены (максимум 3 в сутки)
+  const telegramId =
+    req.telegramId ||
+    req.telegramUser?.id ||
+    req.query.telegramId ||
+    "guest_dev";
+
+  let user = null;
+  try {
+    user = await User.findOne({ telegramId: String(telegramId) });
+    if (!user) {
+      user = new User({
+        telegramId: String(telegramId),
+        username: req.telegramUser?.username || "Learner",
+        examsTakenToday: 0,
+        lastExamDate: new Date(),
+      });
+    }
+
+    const now = new Date();
+    // Если lastExamDate было вчера (или раньше), сбрасываем examsTakenToday на 0 и обновляем дату
+    if (!user.lastExamDate || !isSameDay(user.lastExamDate, now)) {
+      user.examsTakenToday = 0;
+      user.lastExamDate = now;
+      await user.save();
+    }
+
+    // Если лимит examsTakenToday >= 3, возвращаем статус 403 Forbidden с { error: 'limit_reached' }
+    if (user.examsTakenToday >= 3) {
+      return res.status(403).json({
+        error: "limit_reached",
+        message:
+          "Вы потратили 3 бесплатные попытки на сегодня. Получите безлимит и ИИ-разбор ошибок с подпиской Pro.",
+        examsTakenToday: user.examsTakenToday,
+        limit: 3,
+      });
+    }
+  } catch (dbErr) {
+    console.warn("⚠️ [Questions Limit] Ошибка проверки лимита в БД:", dbErr.message);
+  }
+
+  async function incrementExamCount() {
+    try {
+      if (user) {
+        user.examsTakenToday = (user.examsTakenToday || 0) + 1;
+        user.lastExamDate = new Date();
+        await user.save();
+      }
+    } catch (saveErr) {
+      console.warn("⚠️ [Questions Limit] Ошибка сохранения счетчика попыток:", saveErr.message);
+    }
+  }
+
   const apiKey =
     process.env.GEMINI_API_KEY ||
     process.env.GOOGLE_API_KEY ||
@@ -930,6 +995,7 @@ Qoidalar:
 
       const parsedList = parseAndValidateGemini10Questions(response.text);
       if (parsedList.length >= 10) {
+        await incrementExamCount();
         return res.status(200).json({
           skill,
           language: isUz ? "uz" : "ru",
@@ -937,6 +1003,8 @@ Qoidalar:
           passingScore: 8,
           questions: parsedList.slice(0, 10),
           model: "gemini-2.5-flash",
+          examsTakenToday: user ? user.examsTakenToday : 1,
+          limit: 3,
         });
       }
     } catch (sdkError) {
@@ -963,6 +1031,7 @@ Qoidalar:
         const textOutput = restRes.data?.candidates?.[0]?.content?.parts?.[0]?.text;
         const parsedList = parseAndValidateGemini10Questions(textOutput);
         if (parsedList.length >= 10) {
+          await incrementExamCount();
           return res.status(200).json({
             skill,
             language: isUz ? "uz" : "ru",
@@ -970,6 +1039,8 @@ Qoidalar:
             passingScore: 8,
             questions: parsedList.slice(0, 10),
             model: "gemini-2.5-flash (REST)",
+            examsTakenToday: user ? user.examsTakenToday : 1,
+            limit: 3,
           });
         }
       } catch (restError) {
@@ -991,6 +1062,7 @@ Qoidalar:
     fallbackDict[skill.toLowerCase()] ||
     fallbackDict.JavaScript;
 
+  await incrementExamCount();
   return res.status(200).json({
     skill,
     language: langKey,
@@ -998,6 +1070,8 @@ Qoidalar:
     passingScore: 8,
     questions: fallbackQuestions.slice(0, 10),
     model: "fallback-hardcore-10",
+    examsTakenToday: user ? user.examsTakenToday : 1,
+    limit: 3,
   });
 }
 

@@ -7,9 +7,11 @@ import {
   Award,
   Bot,
   CheckCircle2,
+  Crown,
   HelpCircle,
   Loader2,
   Sparkles,
+  Star,
   X,
   XCircle,
   Zap,
@@ -17,6 +19,7 @@ import {
 import { useLanguage } from "@/utils/translations";
 import { useTelegram } from "@/context/TelegramProvider";
 import { trackEvent } from "@/utils/analytics";
+import { showToast } from "@/utils/toast";
 
 export interface QuestionItem {
   question: string;
@@ -55,6 +58,7 @@ export default function QuizModal({
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [isAnswerChecked, setIsAnswerChecked] = useState<boolean>(false);
   const [isFinished, setIsFinished] = useState<boolean>(false);
+  const [isLimitReached, setIsLimitReached] = useState<boolean>(false);
 
   const transitionTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -93,6 +97,7 @@ export default function QuizModal({
     setSelectedOption(null);
     setIsAnswerChecked(false);
     setIsFinished(false);
+    setIsLimitReached(false);
 
     const controller = new AbortController();
 
@@ -117,6 +122,18 @@ export default function QuizModal({
         );
 
         if (!response.ok) {
+          if (response.status === 403) {
+            try {
+              const errData = await response.json();
+              if (errData?.error === "limit_reached") {
+                if (isMounted) {
+                  setIsLimitReached(true);
+                  setLoading(false);
+                }
+                return;
+              }
+            } catch {}
+          }
           throw new Error(`HTTP error ${response.status}`);
         }
 
@@ -230,6 +247,18 @@ export default function QuizModal({
     onClose();
   };
 
+  const handleBuyPro = () => {
+    // Аналитика подписки: отправка события pro_clicked
+    trackEvent("pro_clicked", { skill: activeSkill });
+    // Красивое Toast-уведомление
+    showToast(
+      lang === "uz"
+        ? "To'lov tizimi tez kunda qo'shiladi! Siz kutish ro'yxatidasiz."
+        : "Оплата скоро появится! Вы в листе ожидания."
+    );
+    onClose();
+  };
+
   const getDynamicLoadingText = () => {
     if (lang === "uz") {
       switch (loadingStep) {
@@ -319,8 +348,58 @@ export default function QuizModal({
             </div>
           )}
 
-          {/* 2. ЭКРАН ЗАВЕРШЕНИЯ: ПОБЕДА (>= 8) ИЛИ ПОРАЖЕНИЕ (<= 7) */}
-          {!loading && isFinished && (
+          {/* 2. FAKE DOOR: ЛИМИТ ИСЧЕРПАН (LIMIT TUGADI) */}
+          {!loading && isLimitReached && (
+            <div className="space-y-4 py-1 animate-in zoom-in-95 duration-200">
+              <div className="bg-manga-yellow border-[3.5px] border-black p-5 shadow-[6px_6px_0px_#000] text-center space-y-3.5 relative overflow-hidden bg-halftone-dense">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-white border-[3px] border-black shadow-[4px_4px_0px_#000] rotate-2">
+                  <Crown className="w-9 h-9 text-black fill-manga-yellow stroke-[2.5]" />
+                </div>
+
+                <div>
+                  <span className="inline-block bg-black text-manga-yellow text-[10px] font-black px-2.5 py-0.5 uppercase tracking-wider mb-2 border border-black shadow-[1px_1px_0px_#000]">
+                    PRO FEATURE ⭐️
+                  </span>
+                  <h3 className="text-xl font-black uppercase text-black leading-tight">
+                    {lang === "uz" ? "Limit tugadi" : "Лимит исчерпан"}
+                  </h3>
+                  <div className="mt-2.5 bg-white border-2 border-black p-3 shadow-[2px_2px_0px_#000]">
+                    <p className="text-xs font-bold text-zinc-900 leading-relaxed">
+                      {lang === "uz"
+                        ? "Siz bugungi 3 ta bepul urinishingizdan foydalandingiz. Pro obunasi bilan cheksiz testlar va AI tahlilini oling."
+                        : "Вы потратили 3 бесплатные попытки на сегодня. Получите безлимит и ИИ-разбор ошибок с подпиской Pro."}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={handleBuyPro}
+                    className="w-full py-3.5 px-4 bg-manga-pink hover:bg-pink-600 text-white border-[3px] border-black font-black text-sm uppercase tracking-wider shadow-[4px_4px_0px_#000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[1px_1px_0px_#000] transition-all cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    <Star className="w-4 h-4 fill-white stroke-[2]" />
+                    <span>
+                      {lang === "uz"
+                        ? "SkillTree Pro sotib olish ⭐️"
+                        : "Купить SkillTree Pro ⭐️"}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="w-full py-2.5 px-4 bg-white hover:bg-zinc-100 text-black border-2 border-black font-black text-xs uppercase tracking-wider shadow-[2px_2px_0px_#000] active:translate-x-[1px] active:translate-y-[1px] transition-all cursor-pointer"
+                  >
+                    {lang === "uz" ? "Yopish" : "Закрыть"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 3. ЭКРАН ЗАВЕРШЕНИЯ: ПОБЕДА (>= 8) ИЛИ ПОРАЖЕНИЕ (<= 7) */}
+          {!loading && !isLimitReached && isFinished && (
             <div className="space-y-4 py-1 animate-in zoom-in-95 duration-200">
               {isPassed ? (
                 /* ПОБЕДА (8, 9 или 10 правильных) */
@@ -402,8 +481,8 @@ export default function QuizModal({
             </div>
           )}
 
-          {/* 3. ПРОЦЕСС ЭКЗАМЕНА (10 ВОПРОСОВ) */}
-          {!loading && !isFinished && currentQ && (
+          {/* 4. ПРОЦЕСС ЭКЗАМЕНА (10 ВОПРОСОВ) */}
+          {!loading && !isLimitReached && !isFinished && currentQ && (
             <div className="space-y-3.5">
               {/* Индикатор прогресса: от 1 / 10 до 10 / 10 */}
               <div className="space-y-1.5">

@@ -57,6 +57,14 @@ const userSchema = new mongoose.Schema(
       default: "",
       trim: true,
     },
+    examsTakenToday: {
+      type: Number,
+      default: 0,
+    },
+    lastExamDate: {
+      type: Date,
+      default: Date.now,
+    },
   },
   {
     timestamps: true,
