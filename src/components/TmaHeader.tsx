@@ -5,19 +5,16 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Zap, ShieldCheck, Globe } from "lucide-react";
 import { USER_PROFILE } from "@/data/mockData";
-import { useTelegram } from "@/hooks/useTelegram";
+import { useTelegram } from "@/context/TelegramProvider";
 import { useLanguage } from "@/utils/translations";
 
 export default function TmaHeader() {
   const pathname = usePathname();
-  const { user } = useTelegram();
+  const { user, dbUser } = useTelegram();
   const { lang, toggleLanguage, setLanguage, t } = useLanguage();
   const [level, setLevel] = useState<number>(1);
 
-  const apiUrl =
-    process.env.NEXT_PUBLIC_API_URL ||
-    "https://skilltree-backend-swuh.onrender.com";
-
+  // Синхронизация уровня и языка из глобального контекста без лишних сетевых запросов
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -26,29 +23,21 @@ export default function TmaHeader() {
       setLevel(Number(savedLvl));
     }
 
-    const telegramId = user?.id ? String(user.id) : "guest_dev";
-    fetch(`${apiUrl}/api/users?telegramId=${encodeURIComponent(telegramId)}`)
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        const found = Array.isArray(data) ? data[0] : data;
-        if (found) {
-          const srvLevel =
-            typeof found.level === "number"
-              ? found.level
-              : 1 + (Array.isArray(found.skills) ? found.skills.length : 0);
-          setLevel(srvLevel);
-          localStorage.setItem("skilltree_level", String(srvLevel));
+    if (dbUser) {
+      if (typeof dbUser.level === "number") {
+        setLevel(dbUser.level);
+        try {
+          localStorage.setItem("skilltree_level", String(dbUser.level));
+        } catch {}
+      }
 
-          // Если в localStorage еще не сохранен ручной выбор, берем язык из БД
-          if (
-            !localStorage.getItem("skilltree_lang") &&
-            (found.language === "ru" || found.language === "uz")
-          ) {
-            setLanguage(found.language);
-          }
-        }
-      })
-      .catch(() => {});
+      if (
+        !localStorage.getItem("skilltree_lang") &&
+        (dbUser.language === "ru" || dbUser.language === "uz")
+      ) {
+        setLanguage(dbUser.language);
+      }
+    }
 
     const handleLevelUpdated = (event: Event) => {
       const customEvent = event as CustomEvent<{ level: number }>;
@@ -61,7 +50,7 @@ export default function TmaHeader() {
     return () => {
       window.removeEventListener("skilltree:level-updated", handleLevelUpdated);
     };
-  }, [apiUrl, user?.id, setLanguage]);
+  }, [dbUser, setLanguage]);
 
   const getChapterLabel = () => {
     switch (pathname) {
@@ -107,7 +96,7 @@ export default function TmaHeader() {
             </div>
             <p className="text-[11px] font-bold text-zinc-700 flex items-center gap-1 mt-0.5 truncate">
               <ShieldCheck className="w-3 h-3 text-black shrink-0" />
-              {USER_PROFILE.rank}
+              {dbUser?.rank || USER_PROFILE.rank}
             </p>
           </div>
         </Link>

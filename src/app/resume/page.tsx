@@ -21,25 +21,14 @@ import {
 } from "lucide-react";
 
 export default function ResumePage() {
-  const { user } = useTelegram();
+  const { user, dbUser, telegramId, username, setDbUser, isLoading } =
+    useTelegram();
   const { lang, t } = useLanguage();
   const r = t.resume;
 
   const apiUrl =
     process.env.NEXT_PUBLIC_API_URL ||
     "https://skilltree-backend-swuh.onrender.com";
-
-  const telegramId = user?.id
-    ? String(user.id)
-    : typeof window !== "undefined"
-    ? localStorage.getItem("skilltree_telegram_id") || "guest_dev"
-    : "guest_dev";
-
-  const username =
-    user?.username ||
-    (user
-      ? `${user.first_name} ${user.last_name || ""}`.trim()
-      : "Frontend Samurai");
 
   const [role, setRole] = useState(
     "Junior Frontend Developer (React / Next.js)"
@@ -55,7 +44,7 @@ export default function ResumePage() {
 
   const [copied, setCopied] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(isLoading);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
@@ -66,46 +55,29 @@ export default function ResumePage() {
     }
   }, [lang, r.defaultProjects, customEditedProjects]);
 
-  // Загрузка сохраненных данных пользователя из API при монтировании
-  const fetchUserProfile = useCallback(async () => {
-    setIsLoadingProfile(true);
-    try {
-      const res = await fetch(
-        `${apiUrl}/api/users/profile?telegramId=${encodeURIComponent(telegramId)}`
-      );
-
-      if (res.ok) {
-        const data = await res.json();
-        const profile = Array.isArray(data) ? data[0] : data;
-
-        if (profile) {
-          if (profile.github_url !== undefined && profile.github_url !== "") {
-            setGithub(profile.github_url);
-          }
-          if (profile.portfolio_url !== undefined && profile.portfolio_url !== "") {
-            setPortfolio(profile.portfolio_url);
-          }
-          if (profile.about_me !== undefined && profile.about_me !== "") {
-            setAboutMe(profile.about_me);
-          }
-          if (profile.rank && profile.rank.trim() !== "") {
-            setRole(profile.rank);
-          }
-          if (Array.isArray(profile.skills) && profile.skills.length > 0) {
-            setStack(profile.skills.join(", "));
-          }
-        }
+  // Синхронизация данных профиля напрямую из глобального контекста TelegramProvider
+  useEffect(() => {
+    if (dbUser) {
+      if (dbUser.github_url !== undefined && dbUser.github_url !== "") {
+        setGithub(dbUser.github_url);
       }
-    } catch (error) {
-      console.warn("Не удалось подтянуть данные профиля:", error);
-    } finally {
+      if (dbUser.portfolio_url !== undefined && dbUser.portfolio_url !== "") {
+        setPortfolio(dbUser.portfolio_url);
+      }
+      if (dbUser.about_me !== undefined && dbUser.about_me !== "") {
+        setAboutMe(dbUser.about_me);
+      }
+      if (dbUser.rank && dbUser.rank.trim() !== "") {
+        setRole(dbUser.rank);
+      }
+      if (Array.isArray(dbUser.skills) && dbUser.skills.length > 0) {
+        setStack(dbUser.skills.join(", "));
+      }
+      setIsLoadingProfile(false);
+    } else if (!isLoading) {
       setIsLoadingProfile(false);
     }
-  }, [apiUrl, telegramId]);
-
-  useEffect(() => {
-    fetchUserProfile();
-  }, [fetchUserProfile]);
+  }, [dbUser, isLoading]);
 
   // Сохранение данных профиля на бэкенд через PUT /api/users/profile
   const handleSaveProfile = async (e?: React.FormEvent) => {
@@ -133,6 +105,11 @@ export default function ResumePage() {
 
       if (!res.ok) {
         throw new Error(`Статус ответа: ${res.status}`);
+      }
+
+      const result = await res.json();
+      if (result.user && setDbUser) {
+        setDbUser(result.user);
       }
 
       setSaveSuccess(true);

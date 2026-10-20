@@ -54,7 +54,7 @@ export function broadcastLevelUpdate(level: number, skills: string[]) {
 }
 
 export default function TreePage() {
-  const { user } = useTelegram();
+  const { user, dbUser, telegramId, username, setDbUser } = useTelegram();
   const { t } = useLanguage();
   const [learnedSkills, setLearnedSkills] = useState<string[]>([]);
   const [level, setLevel] = useState<number>(1);
@@ -68,40 +68,19 @@ export default function TreePage() {
     process.env.NEXT_PUBLIC_API_URL ||
     "https://skilltree-backend-swuh.onrender.com";
 
-  const telegramId = user?.id ? String(user.id) : "guest_dev";
-  const username =
-    user?.username ||
-    (user
-      ? `${user.first_name} ${user.last_name || ""}`.trim()
-      : "Frontend Samurai");
-
-  const fetchUserProfile = useCallback(async () => {
-    try {
-      const res = await fetch(
-        `${apiUrl}/api/users?telegramId=${encodeURIComponent(telegramId)}`
-      );
-      if (res.ok) {
-        const data = await res.json();
-        const found = Array.isArray(data) ? data[0] : data;
-        if (found) {
-          const loadedSkills = Array.isArray(found.skills) ? found.skills : [];
-          const computedLevel =
-            typeof found.level === "number"
-              ? found.level
-              : 1 + loadedSkills.length;
-          setLearnedSkills(loadedSkills);
-          setLevel(computedLevel);
-          broadcastLevelUpdate(computedLevel, loadedSkills);
-        }
-      }
-    } catch (error) {
-      console.warn("Не удалось загрузить профиль навыков:", error);
-    }
-  }, [apiUrl, telegramId]);
-
+  // Синхронизируем навыки и уровень напрямую из глобального контекста TelegramProvider
   useEffect(() => {
-    fetchUserProfile();
-  }, [fetchUserProfile]);
+    if (dbUser) {
+      const loadedSkills = Array.isArray(dbUser.skills) ? dbUser.skills : [];
+      const computedLevel =
+        typeof dbUser.level === "number"
+          ? dbUser.level
+          : 1 + loadedSkills.length;
+      setLearnedSkills(loadedSkills);
+      setLevel(computedLevel);
+      broadcastLevelUpdate(computedLevel, loadedSkills);
+    }
+  }, [dbUser]);
 
   const handleSkillCardClick = (skillName: SkillKey) => {
     if (learnedSkills.includes(skillName)) {
@@ -154,6 +133,9 @@ export default function TreePage() {
           setLearnedSkills(srvSkills);
           setLevel(srvLevel);
           broadcastLevelUpdate(srvLevel, srvSkills);
+          setDbUser((prev) =>
+            prev ? { ...prev, skills: srvSkills, level: srvLevel } : null
+          );
         }
       }
     } catch (error) {

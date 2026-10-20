@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import confetti from "canvas-confetti";
 import {
   AlertTriangle,
@@ -53,11 +53,22 @@ export default function QuizModal({
   const [isAnswerChecked, setIsAnswerChecked] = useState<boolean>(false);
   const [isFinished, setIsFinished] = useState<boolean>(false);
 
+  const transitionTimerRef = useRef<NodeJS.Timeout | null>(null);
+
   const activeSkill = skill || quiz?.skill || null;
 
   const apiUrl =
     process.env.NEXT_PUBLIC_API_URL ||
     "https://skilltree-backend-swuh.onrender.com";
+
+  // Очистка таймеров при размонтировании модалки
+  useEffect(() => {
+    return () => {
+      if (transitionTimerRef.current) {
+        clearTimeout(transitionTimerRef.current);
+      }
+    };
+  }, []);
 
   // Динамическая ротация статуса загрузки для живого UX
   useEffect(() => {
@@ -166,7 +177,11 @@ export default function QuizModal({
     }
 
     // Автоматический плавный переход к следующему вопросу через 800мс
-    setTimeout(() => {
+    if (transitionTimerRef.current) {
+      clearTimeout(transitionTimerRef.current);
+    }
+
+    transitionTimerRef.current = setTimeout(() => {
       if (currentIndex + 1 < questions.length) {
         setCurrentIndex((prev) => prev + 1);
         setSelectedOption(null);
