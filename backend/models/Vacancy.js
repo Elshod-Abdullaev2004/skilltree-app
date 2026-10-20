@@ -6,6 +6,7 @@ const vacancySchema = new mongoose.Schema(
       type: String,
       required: [true, "Поле title (должность) обязательно"],
       trim: true,
+      index: true,
     },
     company: {
       type: String,
@@ -25,6 +26,7 @@ const vacancySchema = new mongoose.Schema(
     tags: {
       type: [String],
       default: [],
+      alias: "skills",
     },
   },
   {
@@ -33,6 +35,20 @@ const vacancySchema = new mongoose.Schema(
     toObject: { virtuals: true },
   }
 );
+
+// Составные и одиночные индексы для масштабируемости (10 000+ вакансий):
+// 1. Быстрая сортировка по дате добавления без in-memory sort
+vacancySchema.index({ createdAt: -1 });
+
+// 2. Составной индекс для мгновенной фильтрации по навыкам/тегам с сортировкой по дате
+vacancySchema.index({ tags: 1, createdAt: -1 });
+
+// 3. Составной индекс для поиска по названию должности с сортировкой по дате
+vacancySchema.index({ title: 1, createdAt: -1 });
+
+// 4. Индексы для быстрой дедупликации и точечного поиска парсером
+vacancySchema.index({ sourceUrl: 1 });
+vacancySchema.index({ title: 1, company: 1 });
 
 // Виртуальные геттеры для обратной совместимости
 vacancySchema.virtual("url").get(function () {
@@ -44,4 +60,3 @@ vacancySchema.virtual("alternate_url").get(function () {
 });
 
 module.exports = mongoose.model("Vacancy", vacancySchema);
-

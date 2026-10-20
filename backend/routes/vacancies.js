@@ -50,13 +50,20 @@ router.get("/sync", async (_req, res) => {
  */
 router.get("/", async (req, res) => {
   try {
-    const { tag } = req.query;
+    const { tag, skill, skills, title } = req.query;
+    const filterTag = tag || skill || skills;
+
+    const filter = {};
+    if (filterTag && filterTag !== "Все") {
+      filter.tags = { $in: [String(filterTag)] };
+    }
+    if (title) {
+      filter.title = { $regex: String(title), $options: "i" };
+    }
+
     const page = Math.max(1, parseInt(req.query.page, 10) || 1);
     const limit = Math.max(1, parseInt(req.query.limit, 10) || 15);
     const skip = (page - 1) * limit;
-
-    const filter =
-      tag && tag !== "Все" ? { tags: { $in: [String(tag)] } } : {};
 
     const [total, vacancies] = await Promise.all([
       Vacancy.countDocuments(filter),

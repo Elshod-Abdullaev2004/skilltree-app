@@ -2,12 +2,14 @@ const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema(
   {
+    // Строго уникально индексированное поле telegramId (с поддержкой telegram_id через alias)
     telegramId: {
       type: String,
       required: [true, "Поле telegramId обязательно"],
       unique: true,
       index: true,
       trim: true,
+      alias: "telegram_id",
     },
     username: {
       type: String,
@@ -58,6 +60,8 @@ const userSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
   }
 );
 

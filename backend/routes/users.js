@@ -9,7 +9,7 @@ const router = express.Router();
  */
 router.get("/", async (req, res) => {
   try {
-    const { telegramId } = req.query;
+    const telegramId = req.query.telegramId || req.query.telegram_id;
     if (telegramId) {
       const user = await User.findOne({ telegramId: String(telegramId) });
       return res.status(200).json(user ? [user] : []);
@@ -31,7 +31,7 @@ router.get("/", async (req, res) => {
  */
 router.get("/profile", async (req, res) => {
   try {
-    const telegramId = req.query.telegramId || "guest_dev";
+    const telegramId = req.query.telegramId || req.query.telegram_id || "guest_dev";
     let user = await User.findOne({ telegramId: String(telegramId) });
     if (!user) {
       return res.status(200).json({
@@ -62,6 +62,7 @@ router.put("/profile", async (req, res) => {
   try {
     const {
       telegramId,
+      telegram_id,
       username,
       github_url,
       portfolio_url,
@@ -73,7 +74,11 @@ router.put("/profile", async (req, res) => {
     } = req.body;
 
     const resolvedTelegramId = String(
-      telegramId || req.query.telegramId || "guest_dev"
+      telegramId ||
+        telegram_id ||
+        req.query.telegramId ||
+        req.query.telegram_id ||
+        "guest_dev"
     );
 
     let user = await User.findOne({ telegramId: resolvedTelegramId });
@@ -144,6 +149,7 @@ router.post("/", async (req, res) => {
   try {
     const {
       telegramId,
+      telegram_id,
       username,
       language,
       rank,
@@ -156,13 +162,15 @@ router.post("/", async (req, res) => {
       about_me,
     } = req.body;
 
-    if (!telegramId || !username) {
+    const resolvedTelegramId = String(telegramId || telegram_id || "");
+
+    if (!resolvedTelegramId || !username) {
       return res.status(400).json({
-        message: "Поля telegramId и username обязательны",
+        message: "Поля telegramId (или telegram_id) и username обязательны",
       });
     }
 
-    const existingUser = await User.findOne({ telegramId: String(telegramId) });
+    const existingUser = await User.findOne({ telegramId: resolvedTelegramId });
 
     if (existingUser) {
       if (username !== undefined) existingUser.username = username;
@@ -225,7 +233,7 @@ router.post("/", async (req, res) => {
  */
 router.post("/skills", async (req, res) => {
   try {
-    const { telegramId, username, skill } = req.body;
+    const { telegramId, telegram_id, username, skill } = req.body;
 
     if (!skill) {
       return res.status(400).json({
@@ -233,7 +241,7 @@ router.post("/skills", async (req, res) => {
       });
     }
 
-    const resolvedTelegramId = String(telegramId || "guest_dev");
+    const resolvedTelegramId = String(telegramId || telegram_id || "guest_dev");
     const resolvedUsername = username || "Frontend Samurai";
 
     let user = await User.findOne({ telegramId: resolvedTelegramId });
