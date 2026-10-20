@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useLanguage } from "@/utils/translations";
 import { useTelegram } from "@/context/TelegramProvider";
+import { trackEvent } from "@/utils/analytics";
 
 export interface QuestionItem {
   question: string;
@@ -198,6 +199,15 @@ export default function QuizModal({
         setIsAnswerChecked(false);
       } else {
         setIsFinished(true);
+
+        // Шаг 3 воронки: quiz_completed (завершение ИИ-экзамена)
+        trackEvent("quiz_completed", {
+          skill: activeSkill,
+          score: nextCorrectCount,
+          totalQuestions: questions.length,
+          passed: nextCorrectCount >= 8,
+        });
+
         // Если экзамен сдан (8+ из 10), запускаем салют
         if (nextCorrectCount >= 8) {
           try {

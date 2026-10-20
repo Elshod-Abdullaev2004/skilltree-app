@@ -8,6 +8,7 @@ import React, {
   useCallback,
   useMemo,
 } from "react";
+import { trackEvent } from "@/utils/analytics";
 
 export interface TelegramUser {
   id: number;
@@ -126,6 +127,11 @@ export function TelegramProvider({ children }: { children: React.ReactNode }) {
         if (isMounted) {
           setInitData(rawInitData);
         }
+        if (rawInitData) {
+          try {
+            sessionStorage.setItem("skilltree_init_data", rawInitData);
+          } catch {}
+        }
 
         if (tg.initDataUnsafe?.user) {
           tgUser = tg.initDataUnsafe.user;
@@ -202,6 +208,13 @@ export function TelegramProvider({ children }: { children: React.ReactNode }) {
       } finally {
         if (isMounted) {
           setIsLoading(false);
+          // Шаг 1 воронки: app_opened (при успешной инициализации пользователя в TelegramProvider)
+          trackEvent("app_opened", {
+            telegram_id: resolvedTelegramId,
+            username: resolvedUsername,
+            platform: tg?.platform || "web",
+            language: resolvedLanguage,
+          });
         }
       }
     }

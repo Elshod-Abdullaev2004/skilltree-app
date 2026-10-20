@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useTelegram } from "@/hooks/useTelegram";
 import { useLanguage } from "@/utils/translations";
+import { trackEvent } from "@/utils/analytics";
 import QuizModal, { type QuizQuestion } from "@/components/QuizModal";
 import {
   Award,
@@ -84,6 +85,13 @@ export default function TreePage() {
   }, [dbUser]);
 
   const handleSkillCardClick = (skillName: SkillKey) => {
+    // Шаг 2 воронки: skill_clicked (клик по узлу в Дереве Навыков)
+    trackEvent("skill_clicked", {
+      skill: skillName,
+      learned: learnedSkills.includes(skillName),
+      level,
+    });
+
     if (learnedSkills.includes(skillName)) {
       return;
     }

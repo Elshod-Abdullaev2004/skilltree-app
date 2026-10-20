@@ -1,7 +1,9 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { Building2, ExternalLink, Flame, MapPin, Sparkles } from "lucide-react";
 import { useLanguage } from "@/utils/translations";
+import { trackEvent } from "@/utils/analytics";
 
 export interface VacancyItem {
   _id?: string;
@@ -47,8 +49,42 @@ export default function VacancyCard({ vacancy, index = 0 }: VacancyCardProps) {
       ? `https://tashkent.hh.uz/vacancy/${vacancy.id}`
       : "#");
 
+  const vacancyId = vacancy._id || vacancy.id || vacancy.title;
+  const hasTrackedViewRef = useRef(false);
+
+  // Шаг 2 воронки: vacancy_viewed (просмотр карточки стажировки)
+  useEffect(() => {
+    if (!hasTrackedViewRef.current) {
+      hasTrackedViewRef.current = true;
+      trackEvent("vacancy_viewed", {
+        vacancy_id: vacancyId,
+        title: vacancy.title,
+        company: vacancy.company,
+      });
+    }
+  }, [vacancyId, vacancy.title, vacancy.company]);
+
+  const handleApplyClick = () => {
+    // Шаг 4 воронки: vacancy_apply_clicked (клик по кнопке "Откликнуться")
+    trackEvent("vacancy_apply_clicked", {
+      vacancy_id: vacancyId,
+      title: vacancy.title,
+      company: vacancy.company,
+      url: directUrl,
+    });
+  };
+
   return (
-    <article className="bg-white border-[3px] border-black shadow-[4px_4px_0px_#000] overflow-hidden transition-transform">
+    <article
+      onClick={() => {
+        trackEvent("vacancy_viewed", {
+          vacancy_id: vacancyId,
+          title: vacancy.title,
+          company: vacancy.company,
+        });
+      }}
+      className="bg-white border-[3px] border-black shadow-[4px_4px_0px_#000] overflow-hidden transition-transform cursor-pointer"
+    >
       {/* Верхняя нео-бруталистская плашка карточки */}
       <div
         className={`${headerBg} bg-halftone-dense border-b-[3px] border-black px-3.5 py-2 flex items-center justify-between gap-2`}
@@ -118,6 +154,10 @@ export default function VacancyCard({ vacancy, index = 0 }: VacancyCardProps) {
             href={directUrl}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleApplyClick();
+            }}
             className="w-full py-3 px-4 bg-manga-orange text-white border-[3px] border-black shadow-[4px_4px_0px_#000] font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-manga-pink active:translate-x-[2px] active:translate-y-[2px] active:shadow-[1px_1px_0px_#000] transition-all"
           >
             <ExternalLink className="w-4 h-4 stroke-[2.5]" />
