@@ -4,21 +4,23 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import confetti from "canvas-confetti";
 import {
-  Award,
-  Bot,
+  Terminal,
+  Cpu,
   Building2,
   Check,
   CheckCircle2,
   Copy,
   ExternalLink,
-  FileText,
+  FileCode2,
   Loader2,
   RotateCcw,
   Sparkles,
   TreePine,
   X,
   XCircle,
-  Zap,
+  ShieldAlert,
+  ShieldCheck,
+  ChevronRight,
 } from "lucide-react";
 import { useLanguage } from "@/utils/translations";
 import { useTelegram } from "@/context/TelegramProvider";
@@ -48,6 +50,12 @@ interface CoverLetterModalProps {
 
 const TOTAL_QUESTIONS = 15;
 const PASSING_SCORE = 12; // 80% порог прохождения
+
+function getAsciiProgressBar(current: number, total: number, barLength = 16) {
+  const filledCount = Math.round((current / total) * barLength);
+  const emptyCount = Math.max(0, barLength - filledCount);
+  return `[${"|".repeat(filledCount)}${".".repeat(emptyCount)}]`;
+}
 
 export default function CoverLetterModal({
   vacancy,
@@ -96,7 +104,7 @@ export default function CoverLetterModal({
     if (stage !== "loading_interview" && stage !== "generating_letter") return;
     const interval = setInterval(() => {
       setLoadingStep((prev) => (prev + 1) % 3);
-    }, 1100);
+    }, 900);
     return () => clearInterval(interval);
   }, [stage]);
 
@@ -109,7 +117,6 @@ export default function CoverLetterModal({
     setIsAnswerChecked(false);
     setMissedSkills([]);
 
-    // Логируем старт боевого собеседования
     trackEvent("vacancy_interview_started", {
       vacancy: vacancy.title,
       company: vacancy.company,
@@ -146,7 +153,6 @@ export default function CoverLetterModal({
           setStage("interview");
           return;
         } else if (Array.isArray(data.questions) && data.questions.length > 0) {
-          // Если пришло меньше 15, дополняем резервным пулом до 15
           const combined = [
             ...data.questions,
             ...getFallbackQuestions(isUz, vacancy.tags?.[0]).slice(
@@ -161,13 +167,9 @@ export default function CoverLetterModal({
       }
     } catch (err: unknown) {
       if ((err as Error)?.name === "AbortError") return;
-      console.warn(
-        "⚠️ [VacancyInterview] Ошибка загрузки собеседования, запускаем локальный пул 15 вопросов:",
-        err
-      );
+      console.warn("⚠️ [VacancyInterview] Ошибка загрузки собеседования, запускаем локальный пул:", err);
     }
 
-    // Резервный пул 15 практических и сложных вопросов
     setQuestions(getFallbackQuestions(isUz, vacancy.tags?.[0]));
     setStage("interview");
   };
@@ -178,7 +180,7 @@ export default function CoverLetterModal({
     return () => controller.abort();
   }, [apiUrl, initData, lang, vacancy.title, vacancy.company, vacancy.tags, vacancyId, isUz]);
 
-  // Генерация сопроводительного письма после успешной сдачи теста (>= 12 из 15)
+  // Генерация сопроводительного письма после успешной сдачи (>= 12 из 15)
   const generateCoverLetter = async (finalScore: number) => {
     setStage("generating_letter");
     trackEvent("cover_letter_requested", {
@@ -286,15 +288,15 @@ ${dbUser?.github_url ? `💻 GitHub с примерами: ${dbUser.github_url}\
       clearTimeout(transitionTimerRef.current);
     }
 
+    // Время задержки перед переходом к следующему вопросу, чтобы пользователь увидел подсветку
     transitionTimerRef.current = setTimeout(() => {
       if (currentIndex + 1 < questions.length) {
         setCurrentIndex((prev) => prev + 1);
         setSelectedOption(null);
         setIsAnswerChecked(false);
       } else {
-        // Завершение 15 вопросов: проверка строгого порога 12 из 15 (80%)
+        // Завершение теста: проверка строгого порога 12 из 15 (80%)
         if (nextScore >= PASSING_SCORE) {
-          // УСПЕХ: 12+ баллов
           trackEvent("vacancy_interview_passed", {
             vacancy: vacancy.title,
             company: vacancy.company,
@@ -308,13 +310,12 @@ ${dbUser?.github_url ? `💻 GitHub с примерами: ${dbUser.github_url}\
               particleCount: 160,
               spread: 85,
               origin: { y: 0.55 },
-              colors: ["#39ff14", "#ffe600", "#ff007f", "#00f0ff", "#ffffff"],
+              colors: ["#00ff41", "#03a9f4", "#ffffff"],
             });
           } catch {}
 
           generateCoverLetter(nextScore);
         } else {
-          // ПРОВАЛ: меньше 12 баллов (< 80%)
           trackEvent("vacancy_interview_failed", {
             vacancy: vacancy.title,
             company: vacancy.company,
@@ -325,10 +326,10 @@ ${dbUser?.github_url ? `💻 GitHub с примерами: ${dbUser.github_url}\
           setStage("interview_failed");
         }
       }
-    }, 650);
+    }, 700);
   };
 
-  // Копирование письма и переход на hh.uz (доступно ТОЛЬКО после сдачи собеседования)
+  // Копирование письма и переход на hh.uz (доступно ТОЛЬКО после успешной сдачи)
   const handleCopyAndApply = async () => {
     if (isApplying) return;
     setIsApplying(true);
@@ -351,8 +352,8 @@ ${dbUser?.github_url ? `💻 GitHub с примерами: ${dbUser.github_url}\
 
     showToast(
       isUz
-        ? "✅ Xat nusxalandi! hh.uz sahifasi ochilmoqda..."
-        : "✅ Письмо скопировано! Открываем вакансию на hh.uz..."
+        ? "✅ Xat nusxalandi! hh.uz ochilmoqda..."
+        : "✅ Письмо скопировано! Переход на hh.uz..."
     );
 
     setTimeout(() => {
@@ -369,7 +370,7 @@ ${dbUser?.github_url ? `💻 GitHub с примерами: ${dbUser.github_url}\
         await navigator.clipboard.writeText(coverLetter);
       }
       setCopied(true);
-      showToast(isUz ? "Nusxa olindi!" : "Письмо скопировано в буфер!");
+      showToast(isUz ? "Nusxa olindi!" : "Скопировано в буфер обмена!");
       setTimeout(() => setCopied(false), 2000);
     } catch {}
   };
@@ -378,24 +379,24 @@ ${dbUser?.github_url ? `💻 GitHub с примерами: ${dbUser.github_url}\
   const primaryFailedSkill =
     missedSkills[0] || vacancy.tags?.[0] || "Frontend";
 
-  const getDynamicLoadingInterviewText = () => {
+  const getDynamicLoadingText = () => {
     if (isUz) {
       switch (loadingStep) {
         case 0:
-          return "🤖 Texlid vakansiya talablari va arxitekturasini o'rganmoqda...";
+          return "> CONNECTING TO CANDIDATE_EVAL_KERNEL...";
         case 1:
-          return "🧠 Fundamental baza, xatolarni topish va 15 ta chuqur savol shakllantirilmoqda...";
+          return "> ANALYZING VACANCY REQUIREMENTS & ARCHITECTURE...";
         default:
-          return "⚡ Qattiqqo'l texnik filtr va savollar kuchi tekshirilmoqda...";
+          return "> COMPILING 15 HARDCORE TECHNICAL TEST ITEMS...";
       }
     }
     switch (loadingStep) {
       case 0:
-        return "🤖 Техлид анализирует требования и стек работодателя...";
+        return "> ПОДКЛЮЧЕНИЕ К СИСТЕМЕ ОЦЕНКИ КАНДИДАТОВ...";
       case 1:
-        return "🧠 Формируем 15 глубоких вопросов: база, архитектура, поиск багов...";
+        return "> АНАЛИЗ ТЕХНОЛОГИЧЕСКОГО СТЕКА И АРХИТЕКТУРЫ...";
       default:
-        return "⚡ Калибруем сложность и настраиваем жесткий фильтр отбора...";
+        return "> КОМПИЛЯЦИЯ 15 ГЛУБОКИХ ВОПРОСОВ (ХАРДКОРНЫЙ ФИЛЬТР)...";
     }
   };
 
@@ -403,35 +404,28 @@ ${dbUser?.github_url ? `💻 GitHub с примерами: ${dbUser.github_url}\
     <div
       role="dialog"
       aria-modal="true"
-      aria-labelledby="interview-modal-title"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-3 sm:p-4 backdrop-blur-[2px]"
+      aria-labelledby="interview-console-title"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-2 sm:p-4 backdrop-blur-sm font-mono"
     >
-      <div className="w-full max-w-[480px] bg-white border-[3.5px] border-black shadow-[8px_8px_0px_#000] overflow-hidden animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[92vh]">
-        {/* Шапка модального окна */}
-        <div className="bg-manga-yellow border-b-[3.5px] border-black px-4 py-3 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-2.5">
-            <span className="w-8 h-8 bg-black text-manga-yellow border-2 border-black flex items-center justify-center shadow-[2px_2px_0px_#000]">
-              <Zap className="w-4.5 h-4.5 stroke-[2.5]" />
+      <div className="w-full max-w-[500px] bg-cyber-black border border-cyber-green shadow-[0_0_30px_rgba(0,255,65,0.15)] rounded-none overflow-hidden animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[94vh] cyber-scanlines">
+        {/* Шапка консоли командной строки */}
+        <div className="bg-cyber-dark border-b border-cyber-green/50 px-3.5 py-2.5 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2">
+            <span className="w-6 h-6 bg-cyber-black border border-cyber-green text-cyber-green flex items-center justify-center shadow-cyber-glow">
+              <Terminal className="w-3.5 h-3.5 stroke-[2.5]" />
             </span>
             <div>
-              <span className="block text-[10px] font-black uppercase tracking-wider text-zinc-900">
+              <span className="block text-[9px] font-bold tracking-widest text-zinc-500 uppercase">
                 {stage === "letter_ready" || stage === "generating_letter"
-                  ? "AI COVER LETTER GENERATOR"
-                  : isUz
-                  ? "BOYEVOY INTERVYU • 15 TA SAVOL"
-                  : "БОЕВОЕ СОБЕСЕДОВАНИЕ • 15 ВОПРОСОВ"}
+                  ? "TRANSMISSION // AI_COVER_LETTER"
+                  : "SECURITY_BREACH // TECH_INTERVIEW"}
               </span>
               <h2
-                id="interview-modal-title"
-                className="text-base font-black uppercase leading-none text-black"
+                id="interview-console-title"
+                className="text-xs font-bold uppercase tracking-wider text-white flex items-center gap-1.5"
               >
-                {stage === "letter_ready"
-                  ? isUz
-                    ? "Kuzatuv xati"
-                    : "Сопроводительное письмо"
-                  : isUz
-                  ? "Texnik suhbat"
-                  : "Техническое собеседование"}
+                <span>TERMINAL_EVAL_V2.5</span>
+                <span className="inline-block w-2 h-3 bg-cyber-green animate-pulse" />
               </h2>
             </div>
           </div>
@@ -440,126 +434,115 @@ ${dbUser?.github_url ? `💻 GitHub с примерами: ${dbUser.github_url}\
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="w-8 h-8 bg-white border-2 border-black shadow-[2px_2px_0px_#000] flex items-center justify-center hover:bg-manga-pink hover:text-white active:translate-x-[1px] active:translate-y-[1px] transition-colors cursor-pointer"
+            className="w-7 h-7 bg-cyber-black border border-zinc-700 text-zinc-400 hover:border-cyber-red hover:text-cyber-red flex items-center justify-center transition-colors cursor-pointer rounded-none"
           >
-            <X className="w-4 h-4 stroke-[3]" />
+            <X className="w-4 h-4 stroke-[2.5]" />
           </button>
         </div>
 
-        {/* Тело модалки */}
-        <div className="p-4 bg-halftone space-y-3.5 overflow-y-auto">
-          {/* Информационная плашка вакансии */}
-          <div className="bg-white border-2 border-black p-2.5 shadow-[3px_3px_0px_#000] flex items-center justify-between gap-2">
+        {/* Тело консоли */}
+        <div className="p-3.5 space-y-3.5 overflow-y-auto">
+          {/* Инфо-плашка вакансии */}
+          <div className="bg-cyber-dark/80 border border-cyber-green/30 p-2.5 flex items-center justify-between gap-2 text-[10px]">
             <div className="min-w-0">
-              <span className="block text-[9px] font-black uppercase text-zinc-600">
-                {isUz ? "Ish beruvchi va lavozim" : "Целевая вакансия"}
+              <span className="text-zinc-500 block uppercase tracking-widest text-[8px]">
+                {isUz ? "TARGET_POSITION" : "ЦЕЛЕВАЯ ПОЗИЦИЯ"}
               </span>
-              <h3 className="text-xs font-black text-black leading-tight truncate">
+              <h3 className="font-bold text-white uppercase truncate">
                 {vacancy.title}
               </h3>
-              <p className="text-[11px] font-bold text-zinc-700 flex items-center gap-1 mt-0.5 truncate">
-                <Building2 className="w-3 h-3 stroke-[2.5] shrink-0" />
+              <p className="text-zinc-400 flex items-center gap-1 mt-0.5 truncate text-[9px]">
+                <Building2 className="w-3 h-3 text-cyber-cyan shrink-0" />
                 <span className="truncate">{vacancy.company}</span>
               </p>
             </div>
-            <span className="bg-manga-lime text-black border border-black px-2 py-0.5 text-[9px] font-black uppercase shrink-0">
-              HH.UZ
+            <span className="bg-cyber-black text-cyber-green border border-cyber-green/40 px-2 py-0.5 font-bold uppercase shrink-0 text-[9px]">
+              HH.UZ // 80% BARRIER
             </span>
           </div>
 
-          {/* 1. ЭКРАН ЗАГРУЗКИ 15 ВОПРОСОВ ОТ ИИ */}
+          {/* 1. ЭКРАН ЗАГРУЗКИ (КОНСОЛЬНАЯ ИНИЦИАЛИЗАЦИЯ) */}
           {stage === "loading_interview" && (
-            <div className="space-y-4 py-4">
-              <div className="bg-manga-cyan border-[3px] border-black p-5 shadow-[4px_4px_0px_#000] text-center space-y-3 relative overflow-hidden bg-halftone-dense">
-                <div className="inline-flex items-center justify-center w-14 h-14 bg-white border-2 border-black shadow-[3px_3px_0px_#000] animate-bounce">
-                  <Bot className="w-8 h-8 text-black stroke-[2.5]" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-black uppercase text-black flex items-center justify-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin shrink-0 stroke-[3]" />
-                    <span>
-                      {isUz
-                        ? "🤖 AI texnik intervyu tayyorlamoqda..."
-                        : "🤖 Техлид готовит технический тест..."}
-                    </span>
-                  </h3>
-                  <p className="text-xs font-bold text-zinc-800 mt-1.5 min-h-[34px] flex items-center justify-center transition-all">
-                    {getDynamicLoadingInterviewText()}
-                  </p>
-                </div>
+            <div className="space-y-3 py-6 text-center">
+              <div className="inline-flex items-center justify-center w-12 h-12 bg-cyber-dark border border-cyber-green text-cyber-green shadow-cyber-glow">
+                <Cpu className="w-6 h-6 stroke-[2] animate-pulse" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-cyber-green tracking-widest uppercase">
+                  {getDynamicLoadingText()}
+                </p>
+                <p className="text-[10px] text-zinc-500 mt-2 font-mono">
+                  [INITIALIZING 15 SYSTEM PROTOCOLS... PLEASE STAND BY]
+                </p>
               </div>
 
-              {/* Скелетоны */}
-              <div className="space-y-2 animate-pulse">
-                <div className="h-4 bg-zinc-300 border-2 border-black w-2/5" />
-                <div className="h-20 bg-zinc-200 border-2 border-black shadow-[2px_2px_0px_#000]" />
-                <div className="h-10 bg-zinc-300 border-2 border-black shadow-[2px_2px_0px_#000]" />
-                <div className="h-10 bg-zinc-300 border-2 border-black shadow-[2px_2px_0px_#000]" />
+              {/* Терминальная полоса загрузки */}
+              <div className="w-full bg-cyber-dark border border-cyber-green/40 p-1 mt-4">
+                <div className="h-2 bg-cyber-green animate-pulse shadow-cyber-glow" style={{ width: "65%" }} />
               </div>
             </div>
           )}
 
-          {/* 2. ЭКРАН ПРОХОЖДЕНИЯ ТЕСТА (СТРОГО 1 ВОПРОС НА ЭКРАНЕ С ПРОГРЕСС-БАРОМ) */}
+          {/* 2. ЭКРАН 15 ВОПРОСОВ (КОНСОЛЬ С ASCII ПРОГРЕСС-БАРОМ) */}
           {stage === "interview" && currentQ && (
             <div className="space-y-3 animate-in zoom-in-95 duration-150">
-              {/* Прогресс-бар: Вопрос 1 из 15 */}
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between text-xs font-black uppercase tracking-wider">
-                  <span className="bg-black text-manga-yellow px-2 py-0.5 border border-black text-[10px]">
-                    {isUz ? "Savol" : "Вопрос"} {currentIndex + 1} {isUz ? "/" : "из"} {TOTAL_QUESTIONS}
+              {/* ASCII Прогресс-бар загрузки взлома/теста */}
+              <div className="bg-cyber-dark/60 border border-cyber-green/30 p-2 space-y-1 text-[10px]">
+                <div className="flex items-center justify-between text-zinc-400">
+                  <span className="text-cyber-green font-bold">
+                    &gt; QUESTION {currentIndex + 1} OF {TOTAL_QUESTIONS}
                   </span>
-                  <span className="inline-flex items-center gap-1 bg-white border border-black px-2 py-0.5 shadow-[1px_1px_0px_#000] text-[10px]">
-                    <Sparkles className="w-3 h-3 text-manga-pink stroke-[2.5]" />
-                    {isUz ? "To'g'ri:" : "Баллы:"} {score} / {TOTAL_QUESTIONS}
+                  <span className="text-cyber-cyan font-bold">
+                    SCORE: {score}/{TOTAL_QUESTIONS} (MIN {PASSING_SCORE})
                   </span>
                 </div>
 
-                {/* Линия прогресса */}
-                <div className="w-full h-3 bg-zinc-200 border-2 border-black shadow-[2px_2px_0px_#000] overflow-hidden">
-                  <div
-                    className="h-full bg-manga-lime transition-all duration-300"
-                    style={{
-                      width: `${((currentIndex + 1) / TOTAL_QUESTIONS) * 100}%`,
-                    }}
-                  />
+                {/* ASCII Прогресс */}
+                <div className="text-cyber-green font-mono text-[11px] tracking-widest flex items-center justify-between">
+                  <span>{getAsciiProgressBar(currentIndex + 1, TOTAL_QUESTIONS, 14)}</span>
+                  <span className="text-[9px] text-zinc-500">
+                    {Math.round(((currentIndex + 1) / TOTAL_QUESTIONS) * 100)}%
+                  </span>
                 </div>
               </div>
 
               {/* Карточка одного текущего вопроса */}
-              <div className="bg-white border-[3px] border-black p-3.5 shadow-[4px_4px_0px_#000] speech-bubble-left space-y-2">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="inline-flex items-center gap-1 bg-manga-cyan border border-black px-2 py-0.5 text-[9px] font-black uppercase">
-                    <Zap className="w-3 h-3 stroke-[3]" />
-                    {isUz ? "SENIOR INTERVIEWER" : "ТЕХЛИД / SENIOR"}
+              <div className="bg-cyber-dark border border-cyber-green/50 p-3.5 space-y-2 relative">
+                <div className="flex items-center justify-between gap-2 text-[9px]">
+                  <span className="text-cyber-blue font-bold uppercase tracking-wider flex items-center gap-1">
+                    <span>root@skilltree:~$</span>
+                    <span className="text-zinc-500">eval_test</span>
                   </span>
                   {currentQ.skill && (
-                    <span className="bg-manga-yellow text-black text-[9px] font-black px-2 py-0.5 uppercase border border-black">
+                    <span className="bg-cyber-black text-cyber-green border border-cyber-green/40 px-1.5 py-0.5 text-[8px] uppercase">
                       #{currentQ.skill}
                     </span>
                   )}
                 </div>
 
-                <p className="text-xs font-black text-black leading-snug">
+                <p className="text-xs font-bold text-white leading-relaxed pt-1">
                   {currentQ.question}
                 </p>
               </div>
 
-              {/* 4 Варианта ответа */}
-              <div className="space-y-2">
+              {/* 4 Варианта ответа: терминальные команды */}
+              <div className="space-y-2 pt-1">
                 {currentQ.options.map((option, idx) => {
                   let buttonStyle =
-                    "bg-white hover:bg-manga-yellow/30 text-black border-[2.5px] border-black shadow-[3px_3px_0px_#000]";
+                    "bg-cyber-black text-zinc-300 border border-cyber-green/40 hover:border-cyber-green hover:text-cyber-green";
 
                   if (isAnswerChecked) {
                     if (idx === currentQ.correctAnswerIndex) {
+                      // При правильном ответе: МИГАЕТ СИНИМ (cyber-blue)
                       buttonStyle =
-                        "bg-manga-lime text-black border-[2.5px] border-black shadow-[3px_3px_0px_#000] font-black scale-[1.01]";
+                        "bg-cyber-blue text-cyber-black border-cyber-blue font-black shadow-cyber-glow-blue animate-pulse";
                     } else if (idx === selectedOption) {
+                      // При ошибке: МИГАЕТ КРАСНЫМ (cyber-red) с легким глитчем
                       buttonStyle =
-                        "bg-red-500 text-white border-[2.5px] border-black shadow-[3px_3px_0px_#000] font-black";
+                        "bg-cyber-red text-white border-cyber-red font-black shadow-cyber-glow-red animate-pulse cyber-glitch";
                     } else {
                       buttonStyle =
-                        "bg-zinc-100 text-zinc-400 border-2 border-zinc-300 opacity-60";
+                        "bg-cyber-black text-zinc-600 border-zinc-800 opacity-40";
                     }
                   }
 
@@ -569,19 +552,19 @@ ${dbUser?.github_url ? `💻 GitHub с примерами: ${dbUser.github_url}\
                       type="button"
                       onClick={() => handleOptionClick(idx)}
                       disabled={isAnswerChecked}
-                      className={`w-full text-left p-2.5 sm:p-3 text-xs font-bold transition-all flex items-start gap-2.5 active:translate-x-[1px] active:translate-y-[1px] cursor-pointer ${buttonStyle}`}
+                      className={`w-full text-left p-2.5 sm:p-3 text-xs font-mono transition-all flex items-start gap-2.5 rounded-none cursor-pointer ${buttonStyle}`}
                     >
-                      <span className="w-5 h-5 bg-black text-white text-[10px] font-black flex items-center justify-center shrink-0 border border-black mt-0.5">
-                        {String.fromCharCode(65 + idx)}
+                      <span className="text-[10px] font-bold shrink-0 opacity-80 mt-0.5">
+                        [{String.fromCharCode(65 + idx)}] &gt;
                       </span>
                       <span className="flex-1 leading-snug">{option}</span>
                       {isAnswerChecked && idx === currentQ.correctAnswerIndex && (
-                        <CheckCircle2 className="w-4 h-4 text-black shrink-0 stroke-[2.5] mt-0.5" />
+                        <CheckCircle2 className="w-4 h-4 text-cyber-black shrink-0 stroke-[2.5]" />
                       )}
                       {isAnswerChecked &&
                         idx === selectedOption &&
                         idx !== currentQ.correctAnswerIndex && (
-                          <XCircle className="w-4 h-4 text-white shrink-0 stroke-[2.5] mt-0.5" />
+                          <XCircle className="w-4 h-4 text-white shrink-0 stroke-[2.5]" />
                         )}
                     </button>
                   );
@@ -590,211 +573,189 @@ ${dbUser?.github_url ? `💻 GitHub с примерами: ${dbUser.github_url}\
             </div>
           )}
 
-          {/* 3. ЭКРАН ПРОВАЛА: МЕНЬШЕ 12 ИЗ 15 (ПЕРЕХОД К COVER LETTER И HH.UZ СТРОГО ЗАБЛОКИРОВАН) */}
+          {/* 3. ЭКРАН ПРОВАЛА: МЕНЬШЕ 12 ИЗ 15 (ПЕРЕХОД К ПИСЬМУ И HH.UZ ЗАБЛОКИРОВАН) */}
           {stage === "interview_failed" && (
-            <div className="space-y-4 py-2 animate-in zoom-in-95 duration-200">
-              <div className="bg-red-500 text-white border-[3.5px] border-black p-5 shadow-[6px_6px_0px_#000] text-center space-y-3.5 relative overflow-hidden bg-halftone-dense">
-                <div className="inline-flex items-center justify-center w-14 h-14 bg-white border-2 border-black shadow-[3px_3px_0px_#000] animate-shake">
-                  <XCircle className="w-8 h-8 text-red-600 stroke-[2.5]" />
+            <div className="space-y-3.5 py-2 animate-in zoom-in-95 duration-200">
+              <div className="bg-cyber-dark border border-cyber-red p-4 text-center space-y-3 shadow-cyber-glow-red">
+                <div className="inline-flex items-center justify-center w-12 h-12 bg-cyber-black border border-cyber-red text-cyber-red">
+                  <ShieldAlert className="w-6 h-6 stroke-[2.5]" />
                 </div>
 
                 <div>
-                  <span className="inline-block bg-black text-manga-yellow text-[10px] font-black px-2.5 py-0.5 uppercase tracking-wider mb-1.5 border border-black">
-                    {isUz ? "QATTIQQO'L FILTRDAN O'TOLMADINGIZ" : "ЖЕСТКИЙ ФИЛЬТР НЕ ПРОЙДЕН"}
+                  <span className="text-[9px] font-bold text-cyber-red uppercase tracking-widest block mb-1">
+                    ACCESS_DENIED // CANDIDATE_UNQUALIFIED
                   </span>
-                  <h3 className="text-lg font-black uppercase text-white leading-tight">
+                  <h3 className="text-sm font-bold uppercase text-white leading-tight">
                     {isUz
                       ? `Suhbatdan o'ta olmadingiz (${score}/${TOTAL_QUESTIONS})`
                       : `Собеседование провалено (${score}/${TOTAL_QUESTIONS})`}
                   </h3>
-                  <div className="mt-2.5 bg-white border-2 border-black p-3 shadow-[2px_2px_0px_#000] text-black">
-                    <p className="text-xs font-black leading-snug">
+                  <div className="mt-2.5 bg-cyber-black border border-cyber-red/50 p-2.5 text-left text-zinc-300">
+                    <p className="text-xs leading-relaxed text-cyber-red font-bold">
                       {isUz
-                        ? `Suhbatdan o'ta olmadingiz (${score}/${TOTAL_QUESTIONS}). Vakansiyadagi talab qilingan texnologiyalarni (${primaryFailedSkill}) yaxshilab o'rganishingiz kerak.`
+                        ? `Собеседование провалено (${score}/${TOTAL_QUESTIONS}). Вам нужно подтянуть технологии из этой вакансии (${primaryFailedSkill}) перед откликом.`
                         : `Собеседование провалено (${score}/${TOTAL_QUESTIONS}). Вам нужно подтянуть технологии из этой вакансии перед откликом.`}
                     </p>
                   </div>
                 </div>
 
-                {/* Плашка результата с порогом 12 из 15 */}
-                <div className="bg-white text-black border-2 border-black p-2.5 shadow-[2px_2px_0px_#000] flex items-center justify-between">
-                  <div className="text-left">
-                    <span className="block text-[9px] font-black uppercase text-zinc-600">
-                      {isUz ? "Sizning natijangiz" : "Ваш результат"}
+                {/* Таблица счета */}
+                <div className="grid grid-cols-2 gap-2 text-left text-[10px] bg-cyber-black border border-zinc-800 p-2">
+                  <div>
+                    <span className="text-zinc-500 block uppercase">
+                      {isUz ? "Sizning balingiz" : "Ваш результат"}
                     </span>
-                    <span className="text-xl font-black text-red-600">
+                    <span className="text-sm font-bold text-cyber-red">
                       {score} / {TOTAL_QUESTIONS}
                     </span>
                   </div>
-                  <div className="text-right">
-                    <span className="block text-[9px] font-black uppercase text-zinc-600">
-                      {isUz ? "Kerakli minimum (80%)" : "Минимум для сдачи (80%)"}
+                  <div>
+                    <span className="text-zinc-500 block uppercase">
+                      {isUz ? "Kerakli minimum" : "Порог допуска"}
                     </span>
-                    <span className="text-sm font-black text-black">
-                      {PASSING_SCORE} / {TOTAL_QUESTIONS}
+                    <span className="text-sm font-bold text-cyber-green">
+                      {PASSING_SCORE} / {TOTAL_QUESTIONS} (80%)
                     </span>
                   </div>
                 </div>
 
-                <div className="space-y-2 pt-1 text-black">
-                  {/* Кнопка в Дерево навыков */}
+                {/* Кнопки действий */}
+                <div className="space-y-2 pt-1">
                   <button
                     type="button"
                     onClick={() => {
                       onClose();
                       router.push("/tree");
                     }}
-                    className="w-full py-3.5 px-4 bg-manga-lime hover:bg-[#34d399] text-black border-[3px] border-black font-black text-xs uppercase tracking-wider shadow-[4px_4px_0px_#000] active:translate-x-[2px] active:translate-y-[2px] transition-all cursor-pointer flex items-center justify-center gap-2"
+                    className="w-full py-2.5 px-3 bg-cyber-green text-cyber-black border border-cyber-green hover:bg-cyber-black hover:text-cyber-green font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all cursor-pointer rounded-none cyber-glow"
                   >
                     <TreePine className="w-4 h-4 stroke-[2.5]" />
-                    <span>
-                      {isUz
-                        ? "Ko'nikmalar daraxtiga o'tish"
-                        : "Подтянуть в Дереве Навыков 🌳"}
-                    </span>
+                    <span>&gt; ПОДТЯНУТЬ В ДЕРЕВЕ НАВЫКОВ [TREE]</span>
                   </button>
 
-                  {/* Кнопка повторить тест */}
                   <button
                     type="button"
                     onClick={() => loadInterview()}
-                    className="w-full py-2.5 px-3 bg-manga-yellow hover:bg-yellow-400 text-black border-2 border-black font-black text-xs uppercase tracking-wider shadow-[2px_2px_0px_#000] active:translate-x-[1px] active:translate-y-[1px] transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                    className="w-full py-2 px-3 bg-cyber-black text-cyber-blue border border-cyber-blue hover:bg-cyber-blue hover:text-cyber-black font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all cursor-pointer rounded-none"
                   >
                     <RotateCcw className="w-3.5 h-3.5 stroke-[2.5]" />
-                    <span>
-                      {isUz ? "Qayta urinib ko'rish" : "Попробовать снова 🔄"}
-                    </span>
+                    <span>&gt; ПОВТОРИТЬ СОБЕСЕДОВАНИЕ [RETRY]</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={onClose}
-                    className="w-full py-2 px-3 bg-white hover:bg-zinc-100 text-black border-2 border-black font-black text-xs uppercase tracking-wider shadow-[2px_2px_0px_#000] active:translate-x-[1px] active:translate-y-[1px] transition-all cursor-pointer"
+                    className="w-full py-1.5 px-3 bg-cyber-black text-zinc-500 border border-zinc-800 hover:text-white font-bold text-xs uppercase tracking-widest transition-all cursor-pointer rounded-none"
                   >
-                    {isUz ? "Yopish" : "Закрыть"}
+                    [ABORT / ВЫХОД]
                   </button>
                 </div>
               </div>
             </div>
           )}
 
-          {/* 4. ЭКРАН ГЕНЕРАЦИИ СОПРОВОДИТЕЛЬНОГО ПИСЬМА (ПОСЛЕ 12+ ИЗ 15) */}
+          {/* 4. ЭКРАН ГЕНЕРАЦИИ ПИСЬМА (ПОСЛЕ УСПЕХА 12+ ИЗ 15) */}
           {stage === "generating_letter" && (
-            <div className="space-y-4 py-4 animate-in zoom-in-95 duration-200">
-              <div className="bg-manga-lime border-[3.5px] border-black p-5 shadow-[6px_6px_0px_#000] text-center space-y-3 relative overflow-hidden bg-halftone-dense">
-                <div className="inline-flex items-center justify-center w-14 h-14 bg-white border-2 border-black shadow-[3px_3px_0px_#000] animate-bounce">
-                  <Award className="w-8 h-8 text-black stroke-[2.5]" />
-                </div>
-                <div>
-                  <span className="inline-block bg-black text-manga-yellow text-[10px] font-black px-2.5 py-0.5 uppercase tracking-wider mb-1">
-                    {isUz ? "INTERVYU MUVAFFAQIYATLI TOPSHIRILDI!" : "СОБЕСЕДОВАНИЕ УСПЕШНО ПРОЙДЕНО!"}
-                  </span>
-                  <h3 className="text-lg font-black uppercase text-black leading-tight">
-                    {isUz
-                      ? `Ajoyib natija: ${score} / ${TOTAL_QUESTIONS} (80%+)`
-                      : `Отличный результат: ${score} / ${TOTAL_QUESTIONS} (80%+)`}
-                  </h3>
-                  <p className="text-xs font-bold text-zinc-900 mt-2 flex items-center justify-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin stroke-[3]" />
-                    <span>
-                      {isUz
-                        ? "AI ushbu natijangizni kiritgan holda kuchli rezyume xati yozmoqda..."
-                        : "ИИ формирует сильное сопроводительное письмо с подтверждением баллов..."}
-                    </span>
-                  </p>
-                </div>
+            <div className="space-y-4 py-4 text-center">
+              <div className="inline-flex items-center justify-center w-12 h-12 bg-cyber-dark border border-cyber-green text-cyber-green shadow-cyber-glow">
+                <ShieldCheck className="w-6 h-6 stroke-[2.5]" />
+              </div>
+              <div>
+                <span className="text-[9px] font-bold text-cyber-green uppercase tracking-widest block mb-1">
+                  ACCESS_GRANTED // CANDIDATE_VERIFIED
+                </span>
+                <h3 className="text-sm font-bold uppercase text-white">
+                  {isUz
+                    ? `Ajoyib natija: ${score} / ${TOTAL_QUESTIONS} (80%+)`
+                    : `Отличный результат: ${score} / ${TOTAL_QUESTIONS} (80%+)`}
+                </h3>
+                <p className="text-xs text-cyber-cyan mt-2 flex items-center justify-center gap-2">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin stroke-[2.5]" />
+                  <span>&gt; COMPILING CLEARANCE TRANSMISSION (AI COVER LETTER)...</span>
+                </p>
               </div>
 
-              <div className="space-y-2 animate-pulse">
-                <div className="h-4 bg-zinc-300 border-2 border-black w-2/5" />
-                <div className="h-24 bg-zinc-200 border-2 border-black shadow-[2px_2px_0px_#000]" />
+              <div className="w-full bg-cyber-dark border border-cyber-green/40 p-1">
+                <div className="h-2 bg-cyber-green animate-pulse shadow-cyber-glow" style={{ width: "90%" }} />
               </div>
             </div>
           )}
 
-          {/* 5. ЭКРАН ГОТОВОГО ПИСЬМА: ДОСТУПЕН ПЕРЕХОД НА HH.UZ */}
+          {/* 5. ЭКРАН ГОТОВОГО ПИСЬМА: ПЕРЕХОД НА HH.UZ РАЗРЕШЕН */}
           {stage === "letter_ready" && (
-            <div className="space-y-3.5 animate-in zoom-in-95 duration-150">
-              {/* Бейдж подтверждения квалификации */}
-              <div className="bg-manga-lime border-2 border-black p-2.5 shadow-[2px_2px_0px_#000] flex items-center justify-between">
-                <span className="text-[11px] font-black uppercase flex items-center gap-1 text-black">
-                  <CheckCircle2 className="w-4 h-4 stroke-[3]" />
-                  {isUz
-                    ? `Texnik suhbat topshirildi: ${score}/${TOTAL_QUESTIONS}`
-                    : `Техническое собеседование: ${score}/${TOTAL_QUESTIONS}`}
+            <div className="space-y-3 animate-in zoom-in-95 duration-150">
+              {/* Бейдж верификации */}
+              <div className="bg-cyber-dark border border-cyber-green p-2.5 flex items-center justify-between text-[10px] shadow-cyber-glow">
+                <span className="font-bold uppercase text-cyber-green flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 stroke-[2.5]" />
+                  <span>
+                    {isUz
+                      ? `Texnik filtr: ${score}/${TOTAL_QUESTIONS}`
+                      : `Технический фильтр: ${score}/${TOTAL_QUESTIONS}`}
+                  </span>
                 </span>
-                <span className="bg-black text-white text-[9px] font-black px-2 py-0.5 uppercase">
-                  VERIFIED 80%+
+                <span className="bg-cyber-green text-cyber-black px-1.5 py-0.5 font-bold uppercase text-[9px]">
+                  VERIFIED_80%+
                 </span>
               </div>
 
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 text-zinc-900">
-                  <FileText className="w-3.5 h-3.5 stroke-[2.5]" />
-                  {isUz
-                    ? "Tayyor kuzatuv xati:"
-                    : "Готовое сопроводительное письмо:"}
+              <div className="flex items-center justify-between text-[10px]">
+                <span className="text-zinc-400 uppercase flex items-center gap-1">
+                  <FileCode2 className="w-3.5 h-3.5 text-cyber-green stroke-[2]" />
+                  <span>COVER_LETTER.TXT</span>
                 </span>
 
                 <button
                   type="button"
                   onClick={handleJustCopy}
-                  className="inline-flex items-center gap-1 text-[10px] font-black uppercase bg-white border border-black px-2 py-0.5 shadow-[1px_1px_0px_#000] hover:bg-manga-yellow transition-colors cursor-pointer"
+                  className="bg-cyber-black text-cyber-green border border-cyber-green/60 hover:bg-cyber-green hover:text-cyber-black px-2 py-0.5 text-[9px] font-bold uppercase transition-all cursor-pointer rounded-none"
                 >
                   {copied ? (
-                    <>
-                      <Check className="w-3 h-3 text-green-700 stroke-[3]" />
-                      <span>{isUz ? "Nusxalandi" : "Скопировано"}</span>
-                    </>
+                    <span className="flex items-center gap-1 text-cyber-cyan">
+                      <Check className="w-3 h-3 stroke-[3]" />
+                      <span>COPIED</span>
+                    </span>
                   ) : (
-                    <>
-                      <Copy className="w-3 h-3 stroke-[2.5]" />
-                      <span>{isUz ? "Nusxa olish" : "Копировать"}</span>
-                    </>
+                    <span className="flex items-center gap-1">
+                      <Copy className="w-3 h-3 stroke-[2]" />
+                      <span>COPY_BUFFER</span>
+                    </span>
                   )}
                 </button>
               </div>
 
-              {/* Текст письма */}
+              {/* Текст письма в терминальном поле */}
               <div className="relative">
                 <textarea
                   value={coverLetter}
                   onChange={(e) => setCoverLetter(e.target.value)}
-                  rows={9}
-                  className="w-full bg-white border-[2.5px] border-black p-3 text-xs font-bold leading-relaxed text-black shadow-[3px_3px_0px_#000] focus:outline-none focus:bg-manga-yellow/10 resize-none font-sans"
+                  rows={8}
+                  className="w-full bg-cyber-black border border-cyber-green/60 p-2.5 text-xs font-mono leading-relaxed text-zinc-200 focus:outline-none focus:border-cyber-green resize-none rounded-none"
                 />
               </div>
 
-              {/* Подсказка */}
-              <div className="bg-manga-yellow/40 border-2 border-black p-2 shadow-[2px_2px_0px_#000] flex items-center gap-2">
-                <Zap className="w-3.5 h-3.5 text-black shrink-0 stroke-[2.5]" />
-                <p className="text-[10px] font-bold text-zinc-800 leading-tight">
-                  {isUz
-                    ? "Tugmani bosganingizda xat nusxalanadi va vakansiya sahifasi ochiladi."
-                    : "При нажатии на кнопку письмо скопируется, и откроется страница вакансии на hh.uz."}
-                </p>
-              </div>
-
-              {/* Кнопка перехода на hh.uz */}
+              {/* Терминальная кнопка перехода на hh.uz */}
               <div className="space-y-2 pt-1">
                 <button
                   type="button"
                   onClick={handleCopyAndApply}
                   disabled={isApplying}
-                  className="w-full py-3.5 px-4 bg-manga-lime hover:bg-[#34d399] text-black border-[3px] border-black font-black text-sm uppercase tracking-wider shadow-[4px_4px_0px_#000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[1px_1px_0px_#000] transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-75 disabled:cursor-not-allowed"
+                  className="w-full py-3 px-4 bg-cyber-green text-cyber-black border border-cyber-green hover:bg-cyber-black hover:text-cyber-green font-bold text-xs uppercase tracking-widest flex items-center justify-between transition-all cursor-pointer rounded-none cyber-glow"
                 >
                   {isApplying ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin stroke-[3]" />
-                      <span>{isUz ? "Ochilmoqda..." : "Переходим..."}</span>
-                    </>
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin stroke-[2.5]" />
+                      <span>&gt; OPENING HH.UZ TRANSMISSION...</span>
+                    </span>
                   ) : (
                     <>
-                      <Copy className="w-4 h-4 stroke-[2.5]" />
-                      <span>
-                        {isUz
-                          ? "Nusxa olish va hh.uz ga o'tish"
-                          : "Скопировать и перейти на hh.uz"}
+                      <span className="flex items-center gap-2">
+                        <Copy className="w-4 h-4 stroke-[2.5]" />
+                        <span>
+                          {isUz
+                            ? "> NUSXA OLISH VA HH.UZ GA O'TISH"
+                            : "> СКОПИРОВАТЬ И ПЕРЕЙТИ НА HH.UZ"}
+                        </span>
                       </span>
                       <ExternalLink className="w-4 h-4 stroke-[2.5]" />
                     </>
@@ -804,9 +765,9 @@ ${dbUser?.github_url ? `💻 GitHub с примерами: ${dbUser.github_url}\
                 <button
                   type="button"
                   onClick={onClose}
-                  className="w-full py-2 px-3 bg-white hover:bg-zinc-100 text-black border-2 border-black font-black text-xs uppercase tracking-wider shadow-[2px_2px_0px_#000] active:translate-x-[1px] active:translate-y-[1px] transition-all cursor-pointer"
+                  className="w-full py-1.5 px-3 bg-cyber-black text-zinc-500 border border-zinc-800 hover:text-white font-bold text-xs uppercase tracking-widest transition-all cursor-pointer rounded-none"
                 >
-                  {isUz ? "Yopish" : "Закрыть"}
+                  [CLOSE_TERMINAL]
                 </button>
               </div>
             </div>
@@ -818,7 +779,7 @@ ${dbUser?.github_url ? `💻 GitHub с примерами: ${dbUser.github_url}\
 }
 
 /**
- * Локальный резервный пул из 15 глубоких и сложных вопросов технического собеседования
+ * Резервный пул 15 практических и сложных вопросов
  */
 function getFallbackQuestions(isUz: boolean, fallbackSkill?: string): InterviewQuestionItem[] {
   if (isUz) {
@@ -991,7 +952,7 @@ function getFallbackQuestions(isUz: boolean, fallbackSkill?: string): InterviewQ
     ];
   }
 
-  // Russian fallback: 15 глубоких и сложных вопросов
+  // Russian fallback
   return [
     {
       question: "В каком порядке Event Loop в браузере выполняет Microtasks (Promise, queueMicrotask) и Macrotasks (setTimeout, setInterval)?",

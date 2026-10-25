@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Zap, ShieldCheck, Globe } from "lucide-react";
+import { Terminal, Shield, Globe, Cpu } from "lucide-react";
 import { USER_PROFILE } from "@/data/mockData";
 import { useTelegram } from "@/context/TelegramProvider";
 import { useLanguage } from "@/utils/translations";
@@ -53,69 +53,72 @@ export default function TmaHeader() {
     switch (pathname) {
       case "/tree":
       case "/skill-tree":
-        return t.chapterTree;
+        return "MATRIX // SKILLS";
       case "/resume":
-        return t.chapterResume;
+        return "CLEARANCE // AI_ID";
       case "/trainer":
-        return t.chapterTrainer;
+        return "SIMULATOR // CODE";
       default:
-        return t.chapterVacancies;
+        return "NET // VACANCIES";
     }
   };
 
   return (
-    <header className="sticky top-0 z-30 bg-manga-paper border-b-[3px] border-black">
-      {/* Top Telegram Mini App System Strip */}
-      <div className="bg-black text-white px-3 py-1 flex items-center justify-between text-[11px] font-mono tracking-wider uppercase">
+    <header className="sticky top-0 z-30 bg-cyber-black border-b border-cyber-green/40 backdrop-blur-md">
+      {/* Top Cyber System Strip */}
+      <div className="bg-cyber-dark/90 text-cyber-green px-3 py-1 flex items-center justify-between text-[10px] font-mono tracking-wider uppercase border-b border-cyber-green/20">
         <div className="flex items-center gap-1.5">
-          <span className="inline-block w-2 h-2 rounded-full bg-manga-lime animate-pulse" />
-          <span className="font-bold text-manga-yellow">SKILLTREE TMA</span>
-          <span className="text-zinc-400">
-            • {user ? `@${user.username || user.first_name}` : "v1.0"}
+          <span className="inline-block w-1.5 h-1.5 bg-cyber-green animate-pulse shadow-[0_0_8px_#00ff41]" />
+          <span className="font-bold tracking-widest text-cyber-green">
+            TERMINAL_V2.5
+          </span>
+          <span className="text-zinc-500">
+            • {user ? `root@${user.username || user.first_name}` : "node_0x1"}
           </span>
         </div>
-        <span className="text-[10px] bg-zinc-800 px-1.5 py-0.5 border border-zinc-600 text-manga-cyan font-bold">
+        <span className="text-[9px] bg-cyber-black px-1.5 py-0.5 border border-cyber-green/40 text-cyber-blue font-bold tracking-widest">
           {getChapterLabel()}
         </span>
       </div>
 
-      {/* Main Brutalist Manga Header */}
-      <div className="px-3.5 py-2.5 flex items-center justify-between bg-speedlines gap-2">
+      {/* Main Cyber Terminal Header */}
+      <div className="px-3.5 py-2.5 flex items-center justify-between gap-2 bg-cyber-black">
         <Link href="/" className="flex items-center gap-2 group min-w-0">
-          <div className="w-9 h-9 shrink-0 bg-manga-yellow border-2 border-black shadow-[2px_2px_0px_#000] flex items-center justify-center font-black text-lg -rotate-3 group-active:rotate-0 transition-transform">
-            ST
+          <div className="w-8 h-8 shrink-0 bg-cyber-dark border border-cyber-green text-cyber-green flex items-center justify-center font-black text-sm group-hover:bg-cyber-green group-hover:text-cyber-black transition-all cyber-glow">
+            <Terminal className="w-4 h-4 stroke-[2.5]" />
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
-              <span className="font-black text-base tracking-tight uppercase leading-none truncate">
-                {user ? `${t.greeting}, ${user.first_name}!` : "SkillTree"}
+              <span className="font-black text-sm tracking-widest uppercase leading-none truncate text-white cyber-glitch">
+                {user ? user.first_name.toUpperCase() : "SKILLTREE"}
               </span>
+              <span className="text-[10px] text-cyber-green font-bold">::SEC</span>
             </div>
-            <p className="text-[11px] font-bold text-zinc-700 flex items-center gap-1 mt-0.5 truncate">
-              <ShieldCheck className="w-3 h-3 text-black shrink-0" />
-              {dbUser?.rank || USER_PROFILE.rank}
+            <p className="text-[10px] font-mono text-zinc-400 flex items-center gap-1 mt-0.5 truncate">
+              <Shield className="w-3 h-3 text-cyber-blue shrink-0" />
+              <span>{dbUser?.rank || USER_PROFILE.rank}</span>
             </p>
           </div>
         </Link>
 
         {/* Right Controls: Language Switcher (RU / UZ) + Level Badge */}
-        <div className="flex items-center gap-1.5 shrink-0">
+        <div className="flex items-center gap-1.5 shrink-0 font-mono">
           <button
             type="button"
             onClick={toggleLanguage}
-            aria-label="Переключить язык / Tilni o'zgartirish"
-            className="flex items-center gap-1 bg-manga-cyan border-2 border-black px-2 py-1 shadow-[2px_2px_0px_#000] text-xs font-black uppercase active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all cursor-pointer"
+            aria-label="Переключить язык"
+            className="flex items-center gap-1 bg-cyber-dark text-cyber-green border border-cyber-green/50 hover:bg-cyber-green hover:text-cyber-black px-2 py-1 text-[11px] font-bold uppercase transition-all cursor-pointer cyber-glitch"
           >
-            <Globe className="w-3.5 h-3.5 stroke-[2.5]" />
-            <span>{lang === "ru" ? "RU" : "UZ"}</span>
+            <Globe className="w-3 h-3 stroke-[2.5]" />
+            <span>[{lang === "ru" ? "RU" : "UZ"}]</span>
           </button>
 
           <Link
             href="/tree"
-            className="flex items-center gap-1 bg-manga-lime border-2 border-black px-2.5 py-1 shadow-[2px_2px_0px_#000] text-xs font-black active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all"
+            className="flex items-center gap-1 bg-cyber-dark text-cyber-blue border border-cyber-blue/50 hover:bg-cyber-blue hover:text-cyber-black px-2 py-1 text-[11px] font-bold transition-all cyber-glow-blue"
           >
-            <Zap className="w-3.5 h-3.5 fill-black" />
-            <span>LVL {level}</span>
+            <Cpu className="w-3 h-3 stroke-[2.5]" />
+            <span>LVL_{level.toString().padStart(2, "0")}</span>
           </Link>
         </div>
       </div>

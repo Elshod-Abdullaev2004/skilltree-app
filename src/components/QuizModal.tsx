@@ -3,10 +3,10 @@
 import { useState, useEffect, useRef } from "react";
 import confetti from "canvas-confetti";
 import {
-  AlertTriangle,
   Award,
-  Bot,
+  Cpu,
   CheckCircle2,
+  Terminal,
   Crown,
   HelpCircle,
   Loader2,
@@ -68,7 +68,6 @@ export default function QuizModal({
     process.env.NEXT_PUBLIC_API_URL ||
     "https://skilltree-backend-swuh.onrender.com";
 
-  // Очистка таймеров при размонтировании модалки
   useEffect(() => {
     return () => {
       if (transitionTimerRef.current) {
@@ -77,16 +76,14 @@ export default function QuizModal({
     };
   }, []);
 
-  // Динамическая ротация статуса загрузки для живого UX
   useEffect(() => {
     if (!loading) return;
     const interval = setInterval(() => {
       setLoadingStep((prev) => (prev + 1) % 3);
-    }, 1100);
+    }, 900);
     return () => clearInterval(interval);
   }, [loading]);
 
-  // Загрузка 10 вопросов с бэкенда (Gemini 2.5 Flash)
   useEffect(() => {
     if (!activeSkill) return;
 
@@ -149,7 +146,6 @@ export default function QuizModal({
         console.warn("⚠️ [QuizModal] Ошибка загрузки 10 вопросов от AI, подключаем резерв:", err);
       }
 
-      // Если запрос не удался, используем локальный резервный пул
       if (isMounted) {
         const fallback10: QuestionItem[] = Array.from({ length: 10 }).map((_, i) => ({
           question:
@@ -204,7 +200,6 @@ export default function QuizModal({
       setCorrectCount(nextCorrectCount);
     }
 
-    // Автоматический плавный переход к следующему вопросу через 800мс
     if (transitionTimerRef.current) {
       clearTimeout(transitionTimerRef.current);
     }
@@ -217,7 +212,6 @@ export default function QuizModal({
       } else {
         setIsFinished(true);
 
-        // Шаг 3 воронки: quiz_completed (завершение ИИ-экзамена)
         trackEvent("quiz_completed", {
           skill: activeSkill,
           score: nextCorrectCount,
@@ -225,21 +219,20 @@ export default function QuizModal({
           passed: nextCorrectCount >= 8,
         });
 
-        // Если экзамен сдан (8+ из 10), запускаем салют
         if (nextCorrectCount >= 8) {
           try {
             confetti({
               particleCount: 160,
               spread: 90,
               origin: { y: 0.55 },
-              colors: ["#39ff14", "#ffe600", "#ff007f", "#00f0ff", "#ffffff"],
+              colors: ["#00ff41", "#03a9f4", "#ffffff"],
             });
           } catch (e) {
             console.warn("Confetti error:", e);
           }
         }
       }
-    }, 800);
+    }, 700);
   };
 
   const handleClaimSuccess = () => {
@@ -248,9 +241,7 @@ export default function QuizModal({
   };
 
   const handleBuyPro = () => {
-    // Аналитика подписки: отправка события pro_clicked
     trackEvent("pro_clicked", { skill: activeSkill });
-    // Красивое Toast-уведомление
     showToast(
       lang === "uz"
         ? "To'lov tizimi tez kunda qo'shiladi! Siz kutish ro'yxatidasiz."
@@ -263,20 +254,20 @@ export default function QuizModal({
     if (lang === "uz") {
       switch (loadingStep) {
         case 0:
-          return "🤖 Gemini 2.5 Flash neyrotarmog'iga ulanmoqda...";
+          return "> CONNECTING TO GEMINI 2.5 KERNEL...";
         case 1:
-          return "🧠 10 ta qiyin imtihon savoli tuzilmoqda...";
+          return "> COMPILING 10 TEST PROCEDURES...";
         default:
-          return "⚙️ Murakkablik darajasi va variantlar tekshirilmoqda...";
+          return "> CALIBRATING DIFFICULTY MATRIX...";
       }
     }
     switch (loadingStep) {
       case 0:
-        return "🤖 Подключаемся к нейросети Gemini 2.5 Flash...";
+        return "> ПОДКЛЮЧЕНИЕ К ЯДРУ GEMINI 2.5 FLASH...";
       case 1:
-        return "🧠 Генерируем 10 хардкорных практических вопросов...";
+        return "> ГЕНЕРАЦИЯ 10 ПРАКТИЧЕСКИХ ТЕСТОВ...";
       default:
-        return "⚙️ Калибруем сложность и проверяем дистракторы...";
+        return "> КАЛИБРОВКА СЛОЖНОСТИ И ПРОВЕРКА ДИСТРАКТОРОВ...";
     }
   };
 
@@ -285,24 +276,24 @@ export default function QuizModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="quiz-modal-title"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-3 sm:p-4 backdrop-blur-[2px]"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-2 sm:p-4 backdrop-blur-sm font-mono"
     >
-      <div className="w-full max-w-[440px] bg-white border-[3.5px] border-black shadow-[8px_8px_0px_#000] overflow-hidden animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[92vh]">
+      <div className="w-full max-w-[460px] bg-cyber-black border border-cyber-green shadow-[0_0_30px_rgba(0,255,65,0.15)] rounded-none overflow-hidden animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[92vh] cyber-scanlines">
         {/* Верхняя шапка модалки */}
-        <div className="bg-manga-yellow border-b-[3.5px] border-black px-4 py-3 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-2.5">
-            <span className="w-8 h-8 bg-black text-manga-yellow border-2 border-black flex items-center justify-center shadow-[2px_2px_0px_#000]">
-              <HelpCircle className="w-4.5 h-4.5 stroke-[2.5]" />
+        <div className="bg-cyber-dark border-b border-cyber-green/50 px-3.5 py-2.5 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2">
+            <span className="w-6 h-6 bg-cyber-black border border-cyber-green text-cyber-green flex items-center justify-center shadow-cyber-glow">
+              <Terminal className="w-3.5 h-3.5 stroke-[2.5]" />
             </span>
             <div>
-              <span className="block text-[10px] font-black uppercase tracking-wider text-zinc-900">
-                {t.quizExamBadge}
+              <span className="block text-[8px] font-bold uppercase tracking-widest text-zinc-500">
+                MATRIX // SKILL_EXAMINATION
               </span>
               <h2
                 id="quiz-modal-title"
-                className="text-base font-black uppercase leading-none text-black"
+                className="text-xs font-bold uppercase tracking-wider text-white"
               >
-                {t.quizConfirmTitle} {activeSkill}
+                &gt; TEST: {activeSkill}
               </h2>
             </div>
           </div>
@@ -311,63 +302,55 @@ export default function QuizModal({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="w-8 h-8 bg-white border-2 border-black shadow-[2px_2px_0px_#000] flex items-center justify-center hover:bg-manga-pink hover:text-white active:translate-x-[1px] active:translate-y-[1px] transition-colors cursor-pointer"
+            className="w-7 h-7 bg-cyber-black border border-zinc-700 text-zinc-400 hover:border-cyber-red hover:text-cyber-red flex items-center justify-center transition-colors cursor-pointer rounded-none"
           >
-            <X className="w-4 h-4 stroke-[3]" />
+            <X className="w-4 h-4 stroke-[2.5]" />
           </button>
         </div>
 
-        {/* Тело модалки с прокруткой при необходимости */}
-        <div className="p-4 bg-halftone space-y-4 overflow-y-auto">
-          {/* 1. СОСТОЯНИЕ ДИНАМИЧЕСКОЙ ЗАГРУЗКИ */}
+        {/* Тело модалки */}
+        <div className="p-3.5 space-y-3.5 overflow-y-auto">
+          {/* 1. СОСТОЯНИЕ ЗАГРУЗКИ */}
           {loading && (
-            <div className="space-y-4 py-3">
-              <div className="bg-manga-cyan border-[3px] border-black p-4 shadow-[4px_4px_0px_#000] text-center space-y-3 relative overflow-hidden">
-                <div className="inline-flex items-center justify-center w-14 h-14 bg-white border-2 border-black shadow-[3px_3px_0px_#000] animate-bounce">
-                  <Bot className="w-8 h-8 text-black stroke-[2.5]" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-black uppercase text-black flex items-center justify-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin shrink-0 stroke-[3]" />
-                    <span>{t.quizAiGenerating}</span>
-                  </h3>
-                  <p className="text-xs font-bold text-zinc-800 mt-1 min-h-[32px] flex items-center justify-center transition-all">
-                    {getDynamicLoadingText()}
-                  </p>
-                </div>
+            <div className="space-y-3 py-6 text-center">
+              <div className="inline-flex items-center justify-center w-12 h-12 bg-cyber-dark border border-cyber-green text-cyber-green shadow-cyber-glow">
+                <Cpu className="w-6 h-6 stroke-[2] animate-pulse" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-cyber-green tracking-widest uppercase">
+                  {getDynamicLoadingText()}
+                </p>
+                <p className="text-[10px] text-zinc-500 mt-1.5 font-mono">
+                  [GENERATING REAL-TIME KNOWLEDGE VERIFICATION PROTOCOL]
+                </p>
               </div>
 
-              {/* Скелетоны нео-брутализма */}
-              <div className="space-y-2.5 animate-pulse">
-                <div className="h-4 bg-zinc-300 border-2 border-black w-1/3" />
-                <div className="h-16 bg-zinc-200 border-[2.5px] border-black shadow-[2px_2px_0px_#000]" />
-                <div className="h-11 bg-zinc-200 border-[2.5px] border-black shadow-[2px_2px_0px_#000]" />
-                <div className="h-11 bg-zinc-200 border-[2.5px] border-black shadow-[2px_2px_0px_#000]" />
-                <div className="h-11 bg-zinc-200 border-[2.5px] border-black shadow-[2px_2px_0px_#000]" />
+              <div className="w-full bg-cyber-dark border border-cyber-green/40 p-1 mt-4">
+                <div className="h-2 bg-cyber-green animate-pulse shadow-cyber-glow" style={{ width: "70%" }} />
               </div>
             </div>
           )}
 
-          {/* 2. FAKE DOOR: ЛИМИТ ИСЧЕРПАН (LIMIT TUGADI) */}
+          {/* 2. FAKE DOOR: ЛИМИТ ИСЧЕРПАН */}
           {!loading && isLimitReached && (
-            <div className="space-y-4 py-1 animate-in zoom-in-95 duration-200">
-              <div className="bg-manga-yellow border-[3.5px] border-black p-5 shadow-[6px_6px_0px_#000] text-center space-y-3.5 relative overflow-hidden bg-halftone-dense">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-white border-[3px] border-black shadow-[4px_4px_0px_#000] rotate-2">
-                  <Crown className="w-9 h-9 text-black fill-manga-yellow stroke-[2.5]" />
+            <div className="space-y-3.5 py-1 animate-in zoom-in-95 duration-200">
+              <div className="bg-cyber-dark border border-cyber-yellow p-4 text-center space-y-3 shadow-[0_0_20px_rgba(255,214,0,0.2)]">
+                <div className="inline-flex items-center justify-center w-12 h-12 bg-cyber-black border border-cyber-yellow text-cyber-yellow">
+                  <Crown className="w-6 h-6 stroke-[2.5]" />
                 </div>
 
                 <div>
-                  <span className="inline-block bg-black text-manga-yellow text-[10px] font-black px-2.5 py-0.5 uppercase tracking-wider mb-2 border border-black shadow-[1px_1px_0px_#000]">
-                    PRO FEATURE ⭐️
+                  <span className="text-[8px] font-bold text-cyber-yellow uppercase tracking-widest block mb-1">
+                    PERMISSION_DENIED // DAILY_LIMIT_EXCEEDED
                   </span>
-                  <h3 className="text-xl font-black uppercase text-black leading-tight">
-                    {lang === "uz" ? "Limit tugadi" : "Лимит исчерпан"}
+                  <h3 className="text-sm font-bold uppercase text-white">
+                    {lang === "uz" ? "Kunlik limit tugadi" : "Дневной лимит исчерпан"}
                   </h3>
-                  <div className="mt-2.5 bg-white border-2 border-black p-3 shadow-[2px_2px_0px_#000]">
-                    <p className="text-xs font-bold text-zinc-900 leading-relaxed">
+                  <div className="mt-2.5 bg-cyber-black border border-cyber-yellow/40 p-2.5 text-left text-zinc-300">
+                    <p className="text-xs leading-relaxed">
                       {lang === "uz"
-                        ? "Siz bugungi 3 ta bepul urinishingizdan foydalandingiz. Pro obunasi bilan cheksiz testlar va AI tahlilini oling."
-                        : "Вы потратили 3 бесплатные попытки на сегодня. Получите безлимит и ИИ-разбор ошибок с подпиской Pro."}
+                        ? "Siz bugungi 3 ta bepul urinishingizdan foydalandingiz. Pro ruxsatnomasi bilan cheksiz testlar va AI tahlilini faollashtiring."
+                        : "Вы потратили 3 бесплатные попытки на сегодня. Получите безлимит и персональный ИИ-разбор ошибок со статусом Pro."}
                     </p>
                   </div>
                 </div>
@@ -376,22 +359,18 @@ export default function QuizModal({
                   <button
                     type="button"
                     onClick={handleBuyPro}
-                    className="w-full py-3.5 px-4 bg-manga-pink hover:bg-pink-600 text-white border-[3px] border-black font-black text-sm uppercase tracking-wider shadow-[4px_4px_0px_#000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[1px_1px_0px_#000] transition-all cursor-pointer flex items-center justify-center gap-2"
+                    className="w-full py-2.5 px-3 bg-cyber-yellow text-cyber-black border border-cyber-yellow hover:bg-cyber-black hover:text-cyber-yellow font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all cursor-pointer rounded-none"
                   >
-                    <Star className="w-4 h-4 fill-white stroke-[2]" />
-                    <span>
-                      {lang === "uz"
-                        ? "SkillTree Pro sotib olish ⭐️"
-                        : "Купить SkillTree Pro ⭐️"}
-                    </span>
+                    <Star className="w-4 h-4 fill-black stroke-[1.5]" />
+                    <span>&gt; UPGRADE TO ROOT PRO ⭐️</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={onClose}
-                    className="w-full py-2.5 px-4 bg-white hover:bg-zinc-100 text-black border-2 border-black font-black text-xs uppercase tracking-wider shadow-[2px_2px_0px_#000] active:translate-x-[1px] active:translate-y-[1px] transition-all cursor-pointer"
+                    className="w-full py-1.5 px-3 bg-cyber-black text-zinc-500 border border-zinc-800 hover:text-white font-bold text-xs uppercase tracking-widest transition-all cursor-pointer rounded-none"
                   >
-                    {lang === "uz" ? "Yopish" : "Закрыть"}
+                    [CLOSE_TERMINAL]
                   </button>
                 </div>
               </div>
@@ -400,32 +379,30 @@ export default function QuizModal({
 
           {/* 3. ЭКРАН ЗАВЕРШЕНИЯ: ПОБЕДА (>= 8) ИЛИ ПОРАЖЕНИЕ (<= 7) */}
           {!loading && !isLimitReached && isFinished && (
-            <div className="space-y-4 py-1 animate-in zoom-in-95 duration-200">
+            <div className="space-y-3.5 py-1 animate-in zoom-in-95 duration-200">
               {isPassed ? (
-                /* ПОБЕДА (8, 9 или 10 правильных) */
-                <div className="bg-manga-lime border-[3.5px] border-black p-5 shadow-[6px_6px_0px_#000] text-center space-y-3.5">
-                  <div className="inline-flex items-center justify-center w-14 h-14 bg-white border-2 border-black shadow-[3px_3px_0px_#000] animate-bounce">
-                    <Award className="w-8 h-8 text-black stroke-[2.5]" />
+                <div className="bg-cyber-dark border border-cyber-green p-4 text-center space-y-3 shadow-cyber-glow">
+                  <div className="inline-flex items-center justify-center w-12 h-12 bg-cyber-black border border-cyber-green text-cyber-green">
+                    <Award className="w-6 h-6 stroke-[2.5]" />
                   </div>
 
                   <div>
-                    <span className="inline-block bg-black text-manga-yellow text-[10px] font-black px-2.5 py-0.5 uppercase tracking-wider mb-1">
-                      {t.quizPassingNotice}
+                    <span className="text-[8px] font-bold text-cyber-green uppercase tracking-widest block mb-1">
+                      TEST_PASSED // SKILL_UNLOCKED
                     </span>
-                    <h3 className="text-xl font-black uppercase text-black leading-tight">
+                    <h3 className="text-sm font-bold uppercase text-white">
                       {t.quizPassedTitle}
                     </h3>
-                    <p className="text-xs font-bold text-zinc-800 mt-1 leading-snug">
+                    <p className="text-xs text-zinc-400 mt-1 leading-snug">
                       {t.quizPassedDesc}
                     </p>
                   </div>
 
-                  {/* Плашка результата */}
-                  <div className="bg-white border-2 border-black p-2.5 shadow-[3px_3px_0px_#000]">
-                    <span className="block text-[10px] font-black uppercase text-zinc-600">
+                  <div className="bg-cyber-black border border-zinc-800 p-2 text-center">
+                    <span className="text-[9px] text-zinc-500 block uppercase">
                       {t.quizCorrectScore}
                     </span>
-                    <span className="text-2xl font-black text-black">
+                    <span className="text-xl font-bold text-cyber-green">
                       {correctCount} / 10
                     </span>
                   </div>
@@ -433,38 +410,38 @@ export default function QuizModal({
                   <button
                     type="button"
                     onClick={handleClaimSuccess}
-                    className="w-full py-3.5 px-4 bg-black text-manga-lime border-[3px] border-black font-black text-sm uppercase tracking-wider shadow-[4px_4px_0px_#000] hover:bg-zinc-900 active:translate-x-[2px] active:translate-y-[2px] transition-all cursor-pointer flex items-center justify-center gap-2"
+                    className="w-full py-2.5 px-3 bg-cyber-green text-cyber-black border border-cyber-green hover:bg-cyber-black hover:text-cyber-green font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all cursor-pointer rounded-none cyber-glow"
                   >
-                    <CheckCircle2 className="w-5 h-5 text-manga-lime stroke-[2.5]" />
-                    <span>{t.quizSaveSkillBtn}</span>
+                    <CheckCircle2 className="w-4 h-4 stroke-[2.5]" />
+                    <span>&gt; {t.quizSaveSkillBtn.toUpperCase()}</span>
                   </button>
                 </div>
               ) : (
-                /* ПОРАЖЕНИЕ (7 и меньше правильных ответов) */
-                <div className="bg-red-500 text-white border-[3.5px] border-black p-5 shadow-[6px_6px_0px_#000] text-center space-y-3.5">
-                  <div className="inline-flex items-center justify-center w-14 h-14 bg-white border-2 border-black shadow-[3px_3px_0px_#000] animate-shake">
-                    <XCircle className="w-8 h-8 text-red-600 stroke-[2.5]" />
+                <div className="bg-cyber-dark border border-cyber-red p-4 text-center space-y-3 shadow-cyber-glow-red">
+                  <div className="inline-flex items-center justify-center w-12 h-12 bg-cyber-black border border-cyber-red text-cyber-red">
+                    <XCircle className="w-6 h-6 stroke-[2.5]" />
                   </div>
 
                   <div>
-                    <h3 className="text-lg font-black uppercase leading-tight text-white drop-shadow-[2px_2px_0px_#000]">
+                    <span className="text-[8px] font-bold text-cyber-red uppercase tracking-widest block mb-1">
+                      TEST_FAILED // SCORE_INSUFFICIENT
+                    </span>
+                    <h3 className="text-sm font-bold uppercase text-white">
                       {t.quizFailedTitle}
                     </h3>
-                    <div className="mt-2 bg-black text-yellow-300 border-2 border-white p-2.5 shadow-[3px_3px_0px_#000]">
-                      <p className="text-xs font-black uppercase tracking-wide">
-                        {t.quizFailedDesc}
-                      </p>
+                    <div className="mt-2 bg-cyber-black border border-cyber-red/50 p-2 text-cyber-red text-xs font-bold leading-relaxed">
+                      {t.quizFailedDesc}
                     </div>
                   </div>
 
-                  <div className="bg-white text-black border-2 border-black p-2.5 shadow-[3px_3px_0px_#000]">
-                    <span className="block text-[10px] font-black uppercase text-zinc-600">
+                  <div className="bg-cyber-black border border-zinc-800 p-2 text-center">
+                    <span className="text-[9px] text-zinc-500 block uppercase">
                       {t.quizFailedScoreText}
                     </span>
-                    <span className="text-2xl font-black text-red-600">
+                    <span className="text-xl font-bold text-cyber-red">
                       {correctCount} / 10
                     </span>
-                    <span className="block text-[11px] font-bold text-zinc-700 mt-0.5">
+                    <span className="block text-[9px] text-zinc-500 mt-0.5">
                       {t.quizFailedRequiredText}
                     </span>
                   </div>
@@ -472,9 +449,9 @@ export default function QuizModal({
                   <button
                     type="button"
                     onClick={onClose}
-                    className="w-full py-3 px-4 bg-white text-black border-[3px] border-black font-black text-xs uppercase tracking-wider shadow-[4px_4px_0px_#000] hover:bg-zinc-100 active:translate-x-[2px] active:translate-y-[2px] transition-all cursor-pointer"
+                    className="w-full py-2 px-3 bg-cyber-black text-zinc-400 border border-zinc-800 hover:border-white hover:text-white font-bold text-xs uppercase tracking-widest transition-all cursor-pointer rounded-none"
                   >
-                    {t.quizFailedCloseBtn}
+                    [ABORT / ВЫХОД]
                   </button>
                 </div>
               )}
@@ -483,42 +460,34 @@ export default function QuizModal({
 
           {/* 4. ПРОЦЕСС ЭКЗАМЕНА (10 ВОПРОСОВ) */}
           {!loading && !isLimitReached && !isFinished && currentQ && (
-            <div className="space-y-3.5">
-              {/* Индикатор прогресса: от 1 / 10 до 10 / 10 */}
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between text-xs font-black uppercase tracking-wider">
-                  <span className="bg-black text-manga-yellow px-2 py-0.5 border border-black text-[10px]">
-                    {t.quizQuestionLabel} {currentIndex + 1} / 10
+            <div className="space-y-3">
+              {/* Прогресс */}
+              <div className="bg-cyber-dark/60 border border-cyber-green/30 p-2 text-[10px] space-y-1">
+                <div className="flex items-center justify-between text-zinc-400">
+                  <span className="text-cyber-green font-bold">
+                    &gt; QUESTION {currentIndex + 1} / 10
                   </span>
-                  <span className="inline-flex items-center gap-1 bg-white border border-black px-2 py-0.5 shadow-[1px_1px_0px_#000] text-[10px]">
-                    <Sparkles className="w-3 h-3 text-manga-pink stroke-[2.5]" />
-                    {t.quizCorrectScore} {correctCount} / 10
+                  <span className="text-cyber-cyan font-bold">
+                    SCORE: {correctCount}/10 (MIN 8)
                   </span>
                 </div>
-
-                {/* Нео-бруталистская полоса прогресса */}
-                <div className="w-full h-3 bg-zinc-200 border-2 border-black shadow-[2px_2px_0px_#000] overflow-hidden">
+                <div className="w-full h-1.5 bg-cyber-black border border-zinc-800">
                   <div
-                    className="h-full bg-manga-lime transition-all duration-300"
-                    style={{
-                      width: `${((currentIndex + 1) / 10) * 100}%`,
-                    }}
+                    className="h-full bg-cyber-green shadow-cyber-glow transition-all"
+                    style={{ width: `${((currentIndex + 1) / 10) * 100}%` }}
                   />
                 </div>
               </div>
 
-              {/* Вопрос в речевом пузыре */}
-              <div className="bg-white border-[3px] border-black p-4 shadow-[4px_4px_0px_#000] speech-bubble-left">
-                <div className="flex items-center justify-between gap-2 mb-2">
-                  <span className="inline-flex items-center gap-1 bg-manga-cyan border border-black px-2 py-0.5 text-[9px] font-black uppercase">
-                    <Zap className="w-3 h-3 stroke-[3]" />
-                    {t.quizMentorQuestion}
-                  </span>
-                  <span className="bg-black text-manga-yellow text-[9px] font-black px-2 py-0.5 uppercase tracking-wider border border-black">
-                    {t.quizAiBadge}
+              {/* Карточка вопроса */}
+              <div className="bg-cyber-dark border border-cyber-green/50 p-3 space-y-2">
+                <div className="flex items-center justify-between text-[9px]">
+                  <span className="text-cyber-blue uppercase font-bold">&gt; root@skilltree:~$ eval</span>
+                  <span className="bg-cyber-black text-cyber-green border border-cyber-green/40 px-1.5 py-0.5 text-[8px] uppercase">
+                    #{activeSkill}
                   </span>
                 </div>
-                <p className="text-sm font-black text-black leading-snug">
+                <p className="text-xs font-bold text-white leading-relaxed">
                   {currentQ.question}
                 </p>
               </div>
@@ -527,17 +496,17 @@ export default function QuizModal({
               <div className="space-y-2 pt-1">
                 {currentQ.options.map((option, idx) => {
                   let btnStyle =
-                    "bg-white text-black shadow-[3px_3px_0px_#000] hover:bg-manga-lime active:translate-x-[1px] active:translate-y-[1px]";
+                    "bg-cyber-black text-zinc-300 border border-cyber-green/40 hover:border-cyber-green hover:text-cyber-green";
 
                   if (isAnswerChecked) {
                     if (idx === currentQ.correctAnswerIndex) {
                       btnStyle =
-                        "bg-manga-lime text-black border-black shadow-[3px_3px_0px_#000] -translate-y-0.5 ring-2 ring-black";
+                        "bg-cyber-blue text-cyber-black border-cyber-blue font-bold shadow-cyber-glow-blue animate-pulse";
                     } else if (idx === selectedOption) {
                       btnStyle =
-                        "bg-red-200 text-red-950 border-black shadow-[2px_2px_0px_#000]";
+                        "bg-cyber-red text-white border-cyber-red font-bold shadow-cyber-glow-red animate-pulse cyber-glitch";
                     } else {
-                      btnStyle = "bg-zinc-100 text-zinc-500 opacity-60";
+                      btnStyle = "bg-cyber-black text-zinc-600 border-zinc-800 opacity-40";
                     }
                   }
 
@@ -547,26 +516,25 @@ export default function QuizModal({
                       type="button"
                       disabled={isAnswerChecked}
                       onClick={() => handleOptionClick(idx)}
-                      className={`w-full py-2.5 px-3 text-left border-[2.5px] border-black font-black text-xs flex items-center justify-between transition-all cursor-pointer ${btnStyle}`}
+                      className={`w-full py-2.5 px-3 text-left border text-xs font-mono flex items-center justify-between transition-all cursor-pointer rounded-none ${btnStyle}`}
                     >
                       <span className="flex items-center gap-2">
-                        <span className="w-5 h-5 bg-black text-white text-[11px] font-black flex items-center justify-center shrink-0">
-                          {idx + 1}
+                        <span className="text-[10px] font-bold opacity-75">
+                          [{idx + 1}] &gt;
                         </span>
                         <span className="leading-snug">{option}</span>
                       </span>
                       {isAnswerChecked && idx === currentQ.correctAnswerIndex && (
-                        <CheckCircle2 className="w-4 h-4 text-black stroke-[3] shrink-0 ml-2" />
+                        <CheckCircle2 className="w-4 h-4 text-cyber-black stroke-[2.5] ml-2 shrink-0" />
                       )}
                     </button>
                   );
                 })}
               </div>
 
-              {/* Подсказка о проходном балле */}
               <div className="pt-1 text-center">
-                <span className="text-[10px] font-black uppercase text-zinc-600 tracking-wider">
-                  ⚡ {t.quizPassingNotice}
+                <span className="text-[9px] uppercase text-zinc-500 tracking-wider font-mono">
+                  [MINIMUM CLEARANCE REQUIREMENT: 8 / 10]
                 </span>
               </div>
             </div>

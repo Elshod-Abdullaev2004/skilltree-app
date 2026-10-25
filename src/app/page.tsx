@@ -4,14 +4,16 @@ import { useState, useEffect, useCallback } from "react";
 import { useTelegram } from "@/hooks/useTelegram";
 import { useLanguage } from "@/utils/translations";
 import VacancyCard, { type VacancyItem } from "@/components/VacancyCard";
-import { Filter, RefreshCw, Zap, ChevronDown } from "lucide-react";
+import { Terminal, RefreshCw, ChevronDown, Filter, Zap } from "lucide-react";
 
 const FILTER_KEYS = ["all", "frontend", "backend", "noExp"] as const;
 type FilterKey = (typeof FILTER_KEYS)[number];
 
 export default function VacanciesPage() {
   const { user } = useTelegram();
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
+  const isUz = lang === "uz";
+
   const [vacancies, setVacancies] = useState<VacancyItem[]>([]);
   const [activeFilter, setActiveFilter] = useState<FilterKey>("all");
   const [page, setPage] = useState<number>(1);
@@ -111,17 +113,17 @@ export default function VacanciesPage() {
   const getFilterLabel = (key: FilterKey) => {
     switch (key) {
       case "frontend":
-        return t.filterFrontend;
+        return "FRONTEND";
       case "backend":
-        return t.filterBackend;
+        return "BACKEND";
       case "noExp":
-        return `⚡ ${t.filterNoExp}`;
+        return isUz ? "TAJRIBASIZ" : "БЕЗ ОПЫТА";
       default:
-        return t.filterAll;
+        return isUz ? "BARCHA" : "ВСЕ ВАКАНСИИ";
     }
   };
 
-  // Мгновенная фильтрация карточек по ключевым словам в названии или тегах
+  // Мгновенная фильтрация карточек
   const filteredVacancies = vacancies.filter((vacancy) => {
     if (activeFilter === "all") return true;
 
@@ -147,18 +149,19 @@ export default function VacanciesPage() {
   });
 
   return (
-    <div className="space-y-4">
-      {/* Верхний приветственный блок в манга-стиле */}
-      <section className="relative bg-manga-yellow border-[3px] border-black shadow-[4px_4px_0px_#000] p-3.5 bg-halftone-yellow overflow-hidden">
+    <div className="space-y-3.5 font-mono">
+      {/* Верхний кибер-терминальный блок */}
+      <section className="cyber-panel p-3.5 space-y-2.5">
         <div className="flex items-start justify-between gap-2">
           <div>
-            <span className="inline-block bg-black text-manga-yellow text-[10px] font-black uppercase px-2 py-0.5 tracking-wider">
+            <div className="flex items-center gap-1.5 text-[9px] text-zinc-500 uppercase tracking-widest">
+              <span className="w-1.5 h-1.5 bg-cyber-green inline-block animate-pulse" />
+              <span>[LIVE_FEED // IT_JOBS_UZ]</span>
+            </div>
+            <h1 className="text-lg font-bold uppercase tracking-tight text-white mt-1">
               {user
-                ? `${t.greeting.toUpperCase()}, ${user.first_name}! 👋`
-                : t.heroBadgeLive}
-            </span>
-            <h1 className="text-2xl font-black uppercase tracking-tight leading-none mt-1.5">
-              {user ? `${t.greeting}, ${user.first_name}!` : t.vacanciesTitle}
+                ? `&gt; HELLO, ${user.first_name.toUpperCase()}!`
+                : "> VACANCIES // STREAM"}
             </h1>
           </div>
 
@@ -166,53 +169,55 @@ export default function VacanciesPage() {
             type="button"
             onClick={() => loadVacancies(1, false)}
             disabled={isLoading}
-            className="bg-white border-2 border-black px-2.5 py-1 shadow-[2px_2px_0px_#000] text-right shrink-0 -rotate-2 active:rotate-0 transition-transform cursor-pointer"
+            className="bg-cyber-black border border-cyber-green/50 text-cyber-green px-2.5 py-1 text-right shrink-0 hover:bg-cyber-green hover:text-cyber-black transition-all cursor-pointer rounded-none"
           >
-            <span className="flex items-center justify-end gap-1 text-[9px] font-black uppercase text-zinc-600">
+            <span className="flex items-center justify-end gap-1 text-[8px] uppercase text-zinc-400">
               <RefreshCw
                 className={`w-2.5 h-2.5 ${isLoading ? "animate-spin" : ""}`}
               />
-              {t.inDatabase}
+              <span>SYNC</span>
             </span>
-            <span className="text-sm font-black text-black">
+            <span className="text-xs font-bold font-mono">
               {isLoading
                 ? "..."
-                : `${filteredVacancies.length}${
-                    totalCount !== null ? ` / ${totalCount}` : ""
-                  } ${t.itemsCountSuffix}`}
+                : `[${filteredVacancies.length}${
+                    totalCount !== null ? `/${totalCount}` : ""
+                  }]`}
             </span>
           </button>
         </div>
 
-        <div className="mt-3 mb-2 bg-white border-[2.5px] border-black p-2.5 shadow-[2px_2px_0px_#000] speech-bubble-left">
-          <p className="text-xs font-bold leading-snug text-black">
-            <span className="bg-manga-lime px-1 py-0.5 border border-black font-black mr-1">
-              {t.botTipLabel}
-            </span>
-            {t.botTipText}
+        {/* Подсказка в стиле консоли */}
+        <div className="bg-cyber-black border border-cyber-green/30 p-2 text-[10px] text-zinc-300 leading-snug flex items-center gap-2">
+          <Terminal className="w-3.5 h-3.5 text-cyber-green shrink-0" />
+          <p>
+            <span className="text-cyber-green font-bold mr-1">&gt; PROTOCOL:</span>
+            {isUz
+              ? "Vakansiyaga topshirishdan oldin 15 ta texnik savoldan iborat jangovar filtrni topshirish talab etiladi."
+              : "Для отклика на вакансию требуется пройти технический фильтр из 15 вопросов (порог 80%)."}
           </p>
         </div>
       </section>
 
-      {/* Горизонтальная прокрутка с кнопками-фильтрами */}
-      <section aria-label="Фильтры по категориям">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-black uppercase tracking-wider flex items-center gap-1.5">
-            <Filter className="w-3.5 h-3.5 stroke-[2.5]" />
-            {t.filterTitle}
+      {/* Горизонтальная строка с фильтрами */}
+      <section aria-label="Фильтры категорий">
+        <div className="flex items-center justify-between mb-1.5 text-[10px]">
+          <span className="text-zinc-500 uppercase tracking-wider flex items-center gap-1">
+            <Filter className="w-3 h-3 text-cyber-green" />
+            <span>FILTER_CATEGORIES</span>
           </span>
           {activeFilter !== "all" && (
             <button
               type="button"
               onClick={() => setActiveFilter("all")}
-              className="text-[11px] font-black underline decoration-2 text-manga-pink cursor-pointer"
+              className="text-cyber-red font-bold uppercase hover:underline cursor-pointer text-[9px]"
             >
-              {t.resetFilter}
+              [RESET_FILTER]
             </button>
           )}
         </div>
 
-        <div className="flex items-center gap-2.5 overflow-x-auto no-scrollbar pb-2 pt-0.5 -mx-3.5 px-3.5">
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
           {FILTER_KEYS.map((key) => {
             const isActive = activeFilter === key;
             return (
@@ -220,45 +225,36 @@ export default function VacanciesPage() {
                 key={key}
                 type="button"
                 onClick={() => setActiveFilter(key)}
-                className={`shrink-0 px-4 py-2 text-xs font-black uppercase tracking-wide border-[2.5px] border-black transition-all select-none cursor-pointer ${
+                className={`shrink-0 px-3 py-1.5 text-[11px] font-mono uppercase tracking-wider border transition-all rounded-none cursor-pointer ${
                   isActive
-                    ? "bg-manga-lime text-black shadow-[4px_4px_0px_#000] -translate-y-0.5"
-                    : "bg-white text-black shadow-[2px_2px_0px_#000] hover:bg-manga-yellow/40 active:translate-x-[1px] active:translate-y-[1px]"
+                    ? "bg-cyber-green text-cyber-black border-cyber-green font-bold shadow-cyber-glow"
+                    : "bg-cyber-dark text-zinc-400 border-zinc-800 hover:border-cyber-green/60 hover:text-cyber-green"
                 }`}
               >
-                {getFilterLabel(key)}
+                [{getFilterLabel(key)}]
               </button>
             );
           })}
         </div>
       </section>
 
-      {/* Состояние первичной загрузки */}
+      {/* Состояние загрузки */}
       {isLoading && (
-        <section aria-label="Загрузка вакансий" className="space-y-4">
-          <div className="bg-manga-cyan border-[3px] border-black shadow-[4px_4px_0px_#000] p-3 flex items-center gap-2.5">
-            <Zap className="w-5 h-5 stroke-[2.5] animate-bounce shrink-0" />
-            <span className="text-xs font-black uppercase tracking-wide">
-              {t.loadingVacancies}
-            </span>
+        <section aria-label="Загрузка" className="space-y-3">
+          <div className="bg-cyber-dark border border-cyber-green/40 p-3 flex items-center gap-2 text-xs text-cyber-green">
+            <RefreshCw className="w-4 h-4 animate-spin stroke-[2.5]" />
+            <span className="tracking-widest uppercase">&gt; FETCHING VACANCY STREAM...</span>
           </div>
 
-          {[1, 2, 3].map((n) => (
+          {[1, 2].map((n) => (
             <div
               key={n}
-              className="bg-white border-[3px] border-black shadow-[4px_4px_0px_#000] overflow-hidden animate-pulse"
+              className="cyber-panel p-3.5 space-y-3 animate-pulse opacity-60"
             >
-              <div className="h-9 bg-zinc-200 border-b-[3px] border-black" />
-              <div className="p-3.5 space-y-3">
-                <div className="h-5 w-3/4 bg-zinc-200 border border-black" />
-                <div className="h-4 w-1/2 bg-zinc-200 border border-black" />
-                <div className="h-10 w-40 bg-zinc-200 border-2 border-black" />
-                <div className="flex gap-2">
-                  <div className="h-5 w-16 bg-zinc-200 border border-black" />
-                  <div className="h-5 w-20 bg-zinc-200 border border-black" />
-                </div>
-                <div className="h-11 w-full bg-zinc-300 border-2 border-black" />
-              </div>
+              <div className="h-4 bg-zinc-800 w-3/4" />
+              <div className="h-3 bg-zinc-800 w-1/2" />
+              <div className="h-8 bg-zinc-800 w-32 border border-zinc-700" />
+              <div className="h-9 bg-zinc-800 w-full" />
             </div>
           ))}
         </section>
@@ -266,23 +262,23 @@ export default function VacanciesPage() {
 
       {/* Ошибка загрузки */}
       {!isLoading && errorFlag && (
-        <div className="bg-red-100 border-[3px] border-black shadow-[4px_4px_0px_#000] p-4 space-y-2.5">
-          <p className="text-xs font-black uppercase text-red-900">
-            {t.errorLoadingVacancies}
+        <div className="cyber-panel-red p-4 space-y-2 text-center">
+          <p className="text-xs font-bold text-cyber-red uppercase">
+            &gt; ERROR_FETCHING_DATA // CONNECTION TIMEOUT
           </p>
           <button
             type="button"
             onClick={() => loadVacancies(1, false)}
-            className="px-4 py-2 bg-manga-yellow border-2 border-black shadow-[2px_2px_0px_#000] text-xs font-black uppercase cursor-pointer"
+            className="px-4 py-2 bg-cyber-black text-cyber-green border border-cyber-green hover:bg-cyber-green hover:text-cyber-black text-xs font-bold uppercase cursor-pointer rounded-none"
           >
-            {t.retryButton}
+            &gt; RETRY_CONNECTION
           </button>
         </div>
       )}
 
       {/* Лента карточек вакансий */}
       {!isLoading && !errorFlag && (
-        <section aria-label="Список вакансий" className="space-y-4">
+        <section aria-label="Список вакансий" className="space-y-3.5">
           {filteredVacancies.length > 0 ? (
             <>
               {filteredVacancies.map((vacancy, index) => (
@@ -293,48 +289,51 @@ export default function VacanciesPage() {
                 />
               ))}
 
-              {/* Кнопка пагинации "Показать еще", скрывается если hasMore: false */}
+              {/* Кнопка пагинации */}
               {hasMore && (
                 <div className="pt-2 pb-6">
                   <button
                     type="button"
                     onClick={handleLoadMore}
                     disabled={isLoadingMore}
-                    className="w-full py-3.5 px-4 bg-manga-yellow hover:bg-yellow-400 border-[3px] border-black shadow-[4px_4px_0px_#000] font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 active:translate-x-[2px] active:translate-y-[2px] active:shadow-[1px_1px_0px_#000] transition-all disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+                    className="w-full py-3 px-4 bg-cyber-black text-cyber-green border border-cyber-green hover:bg-cyber-green hover:text-cyber-black font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all cursor-pointer rounded-none cyber-glow disabled:opacity-50"
                   >
                     {isLoadingMore ? (
                       <>
                         <RefreshCw className="w-4 h-4 animate-spin stroke-[2.5]" />
-                        <span>{t.loadingMore}</span>
+                        <span>&gt; LOADING_MORE_DATA...</span>
                       </>
                     ) : (
                       <>
                         <ChevronDown className="w-4 h-4 stroke-[3]" />
-                        <span>{t.loadMoreVacancies}</span>
+                        <span>
+                          {isUz
+                            ? "> KO'PROQ YUKLASH [PAGINATION]"
+                            : "> ПОКАЗАТЬ ЕЩЕ [ЗАГРУЗИТЬ 15]"}
+                        </span>
                       </>
                     )}
                   </button>
                 </div>
               )}
 
-              {/* Индикатор конца списка */}
               {!hasMore && vacancies.length > 0 && (
-                <div className="text-center py-4 text-xs font-black uppercase tracking-wider text-zinc-500">
-                  • {t.noMoreVacancies} •
+                <div className="text-center py-4 text-[10px] uppercase tracking-widest text-zinc-600 font-mono">
+                  [END_OF_TRANSMISSION // ALL VACANCIES LOADED]
                 </div>
               )}
             </>
           ) : (
-            <div className="bg-white border-[3px] border-black shadow-[4px_4px_0px_#000] p-5 text-center space-y-2">
-              <p className="text-sm font-black uppercase">
-                {t.emptyCategoryPrefix} «{getFilterLabel(activeFilter)}» {t.emptyCategorySuffix}
+            <div className="cyber-panel p-5 text-center space-y-2">
+              <p className="text-xs font-bold text-zinc-400 uppercase">
+                &gt; NO_DATA_FOR_FILTER: [{getFilterLabel(activeFilter)}]
               </p>
               <button
                 type="button"
                 onClick={() => setActiveFilter("all")}
-                className="inline-block px-4 py-2 bg-manga-lime border-2 border-black shadow-[2px_2px_0px_#000] text-xs font-black uppercase cursor-pointer"
+                className="px-3 py-1.5 bg-cyber-black text-cyber-green border border-cyber-green hover:bg-cyber-green hover:text-cyber-black text-xs font-bold uppercase cursor-pointer rounded-none"
               >
-                {t.showAllVacancies}
+                &gt; RESET_TO_ALL
               </button>
             </div>
           )}

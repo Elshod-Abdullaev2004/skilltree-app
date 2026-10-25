@@ -7,9 +7,9 @@ import Toast from "@/components/Toast";
 import { TelegramProvider } from "@/context/TelegramProvider";
 
 export const metadata: Metadata = {
-  title: "SkillTree — Первая работа в IT & Прокачка разработчика",
+  title: "SkillTree // Cyber-Terminal IT Career Simulator",
   description:
-    "Telegram Mini App для поиска первой работы в IT, генерации ИИ-резюме, тренировки собеседований и прокачки дерева навыков.",
+    "Cyber-Terminal Telegram Mini App for Junior IT career clearance, AI Technical Screening, and Skill Tree matrix.",
 };
 
 export const viewport: Viewport = {
@@ -31,13 +31,13 @@ export default function RootLayout({
           strategy="beforeInteractive"
         />
       </head>
-      <body className="antialiased selection:bg-manga-yellow selection:text-manga-ink">
-        {/* Strict Mobile-First Telegram Mini App Container with Global Context */}
-        <div className="relative mx-auto w-full max-w-[430px] min-h-dvh bg-halftone border-x-[3px] border-manga-ink flex flex-col shadow-[0_0_40px_rgba(0,0,0,0.6)]">
+      <body className="antialiased bg-cyber-black text-cyber-green selection:bg-cyber-green selection:text-cyber-black font-mono">
+        {/* Cyber-Terminal Mobile Container */}
+        <div className="relative mx-auto w-full max-w-[440px] min-h-dvh bg-cyber-black border-x border-cyber-green/30 flex flex-col shadow-[0_0_40px_rgba(0,255,65,0.08)] cyber-scanlines">
           <TelegramProvider>
             <Toast />
             <TmaHeader />
-            <main className="flex-1 px-3.5 pt-4 pb-28">{children}</main>
+            <main className="flex-1 px-3.5 pt-3.5 pb-28">{children}</main>
             <BottomNav />
           </TelegramProvider>
         </div>

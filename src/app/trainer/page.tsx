@@ -4,11 +4,11 @@ import { useState } from "react";
 import { useLanguage } from "@/utils/translations";
 import { useTelegram } from "@/hooks/useTelegram";
 import {
-  Swords,
+  Binary,
   AlertTriangle,
   CheckCircle2,
   Send,
-  Sparkles,
+  Terminal,
   Bot,
   User,
 } from "lucide-react";
@@ -44,7 +44,6 @@ export default function TrainerPage() {
     setInput("");
   };
 
-  // Формируем список сообщений динамически на выбранном языке (ru / uz)
   const renderedMessages = [
     ...tr.initialMessages.map((msg) => ({
       ...msg,
@@ -79,104 +78,102 @@ export default function TrainerPage() {
   ];
 
   return (
-    <div className="space-y-4">
-      {/* Manga Arena Header */}
-      <section className="bg-manga-pink text-white border-[3px] border-black shadow-[4px_4px_0px_#000] p-3.5 bg-speedlines">
-        <div className="flex items-center justify-between">
-          <span className="inline-block bg-manga-yellow text-black text-[10px] font-black uppercase px-2 py-0.5 border border-black">
-            {tr.heroBadge}
+    <div className="space-y-4 font-mono">
+      {/* Cyber Arena Header */}
+      <section className="cyber-panel p-3.5 space-y-2">
+        <div className="flex items-center justify-between text-[9px]">
+          <span className="text-cyber-green font-bold uppercase tracking-widest">
+            SIMULATION // INTERVIEW_CHAMBER
           </span>
-          <span className="text-xs font-black bg-black text-manga-lime px-2 py-0.5 border border-white">
-            {tr.roundBadge}
+          <span className="bg-cyber-black text-cyber-blue px-2 py-0.5 border border-cyber-blue/40 font-bold uppercase">
+            ROUND: ACTIVE
           </span>
         </div>
-        <h1 className="text-2xl font-black uppercase tracking-tight leading-none mt-2 flex items-center gap-2">
-          <Swords className="w-6 h-6 stroke-[2.5]" />
-          {tr.heroTitle}
+        <h1 className="text-base font-bold uppercase tracking-tight text-white flex items-center gap-2">
+          <Binary className="w-5 h-5 text-cyber-green stroke-[2.5]" />
+          <span>&gt; AI_TECHNICAL_DIALOGUE_SIMULATOR</span>
         </h1>
       </section>
 
-      {/* Comic Dialogue Feed */}
-      <section aria-label={tr.heroTitle} className="space-y-5">
+      {/* Cyber Dialogue Feed */}
+      <section aria-label="Dialogue" className="space-y-3.5">
         {renderedMessages.map((msg) => {
           const isMentor = msg.sender === "mentor";
 
           return (
-            <div key={msg.id} className="space-y-2">
+            <div key={msg.id} className="space-y-1.5">
               {/* Speaker Strip */}
               <div
-                className={`flex items-center gap-2 ${
+                className={`flex items-center gap-2 text-[10px] ${
                   isMentor ? "justify-start" : "justify-end"
                 }`}
               >
                 {isMentor && (
-                  <div className="w-7 h-7 bg-black text-manga-yellow border-2 border-black flex items-center justify-center shrink-0">
-                    <Bot className="w-4 h-4" />
+                  <div className="w-5 h-5 bg-cyber-black text-cyber-green border border-cyber-green flex items-center justify-center shrink-0">
+                    <Bot className="w-3.5 h-3.5" />
                   </div>
                 )}
-                <span className="text-xs font-black uppercase bg-white border-2 border-black px-2 py-0.5 shadow-[1px_1px_0px_#000]">
+                <span className="font-bold text-white uppercase">
                   {msg.speakerName}
                 </span>
-                <span className="text-[10px] font-black bg-manga-yellow border border-black px-1.5 py-0.5">
-                  {msg.speakerBadge}
+                <span className="text-zinc-500 font-mono">
+                  [{msg.speakerBadge}]
                 </span>
                 {!isMentor && (
-                  <div className="w-7 h-7 bg-manga-lime text-black border-2 border-black flex items-center justify-center shrink-0">
-                    <User className="w-4 h-4 stroke-[2.5]" />
+                  <div className="w-5 h-5 bg-cyber-dark text-cyber-cyan border border-cyber-cyan/50 flex items-center justify-center shrink-0">
+                    <User className="w-3.5 h-3.5" />
                   </div>
                 )}
               </div>
 
-              {/* Comic Speech Bubble */}
+              {/* Message Box */}
               <div
-                className={`border-[3px] border-black p-3.5 shadow-[4px_4px_0px_#000] ${
+                className={`p-3 border text-xs leading-relaxed ${
                   isMentor
-                    ? "bg-white speech-bubble-left mr-3"
-                    : "bg-manga-yellow/90 speech-bubble-right ml-3"
+                    ? "bg-cyber-dark text-zinc-200 border-cyber-green/40 mr-2 shadow-[0_0_15px_rgba(0,0,0,0.5)]"
+                    : "bg-cyber-black text-white border-cyber-blue/50 ml-2"
                 }`}
               >
                 {msg.sfx && (
-                  <div className="mb-2">
-                    <span className="inline-block bg-black text-manga-yellow text-[10px] font-black uppercase px-2 py-0.5 -skew-x-6 border border-black">
-                      ⚡ {msg.sfx}
+                  <div className="mb-1.5">
+                    <span className="text-[9px] text-cyber-blue uppercase tracking-wider font-bold">
+                      &gt;&gt; {msg.sfx}
                     </span>
                   </div>
                 )}
 
-                <p className="text-xs font-bold leading-relaxed text-black">
-                  {msg.text}
-                </p>
+                <p>{msg.text}</p>
 
                 {/* AI Feedback & Error Highlighting Block */}
                 {msg.feedback && (
-                  <div className="mt-3 pt-3 border-t-2 border-dashed border-black space-y-2.5">
+                  <div className="mt-2.5 pt-2.5 border-t border-zinc-800 space-y-2 text-[11px]">
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="bg-black text-white text-[10px] font-black px-2 py-0.5 uppercase">
-                        {tr.verdictPrefix} {msg.feedback.score}
+                      <span className="bg-cyber-black text-cyber-green border border-cyber-green/40 px-1.5 py-0.5 text-[9px] uppercase font-bold">
+                        VERDICT: {msg.feedback.score}
                       </span>
-                      <span className="bg-manga-lime border border-black text-[10px] font-black px-2 py-0.5 uppercase">
-                        {msg.feedback.xpAwarded}
+                      <span className="text-cyber-cyan text-[10px] font-bold">
+                        +{msg.feedback.xpAwarded}
                       </span>
                     </div>
 
-                    {/* Highlighted Error Box */}
-                    <div className="bg-red-100 border-2 border-black p-2.5 shadow-[1px_1px_0px_#000]">
-                      <div className="flex items-center gap-1.5 text-[11px] font-black uppercase text-red-900 mb-1">
-                        <AlertTriangle className="w-3.5 h-3.5 stroke-[2.5] shrink-0" />
-                        <span>{tr.mistakeLabel}</span>
+                    {/* Ошибка */}
+                    <div className="bg-cyber-black border border-cyber-red/50 p-2 text-cyber-red">
+                      <div className="flex items-center gap-1 text-[10px] uppercase font-bold mb-0.5">
+                        <AlertTriangle className="w-3 h-3 shrink-0" />
+                        <span>MISTAKE_DETECTED</span>
                       </div>
-                      <p className="text-xs font-bold text-red-950 underline decoration-wavy decoration-red-600">
+                      <p className="text-zinc-300">
                         {msg.feedback.mistakeHighlight}
                       </p>
                     </div>
 
-                    {/* Correct Explanation Box */}
-                    <div className="bg-manga-lime/40 border-2 border-black p-2.5 shadow-[1px_1px_0px_#000]">
-                      <div className="flex items-center gap-1.5 text-[11px] font-black uppercase text-black mb-1">
-                        <CheckCircle2 className="w-3.5 h-3.5 stroke-[2.5] shrink-0" />
-                        <span>{tr.correctionLabel}</span>
+                    {/* Исправление */}
+                    <div className="bg-cyber-black border border-cyber-green/40 p-2 text-cyber-green">
+                      <div className="flex items-center gap-1 text-[10px] uppercase font-bold mb-0.5">
+                        <CheckCircle2 className="w-3 h-3 shrink-0" />
+                        <span>RECOMMENDED_FIX</span>
                       </div>
-                      <p className="text-xs font-bold text-black leading-snug">
+                      <p className="text-zinc-300">
                         {msg.feedback.correction}
                       </p>
                     </div>
@@ -189,16 +186,10 @@ export default function TrainerPage() {
       </section>
 
       {/* Reply Input Box */}
-      <form
-        onSubmit={handleSend}
-        className="pt-2 bg-white border-[3px] border-black p-3 shadow-[4px_4px_0px_#000] space-y-2"
-      >
-        <label
-          htmlFor="trainer-input"
-          className="text-[11px] font-black uppercase flex items-center gap-1"
-        >
-          <Sparkles className="w-3.5 h-3.5 text-manga-pink" />
-          {tr.inputLabel}
+      <form onSubmit={handleSend} className="cyber-panel p-3 space-y-2">
+        <label htmlFor="trainer-input" className="text-[9px] text-zinc-400 uppercase flex items-center gap-1">
+          <Terminal className="w-3 h-3 text-cyber-green" />
+          <span>&gt; ENTER_ARGUMENT_TO_TERMINAL</span>
         </label>
         <div className="flex gap-2">
           <input
@@ -206,15 +197,15 @@ export default function TrainerPage() {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={tr.inputPlaceholder}
-            className="flex-1 bg-manga-bg border-2 border-black px-3 py-2 text-xs font-bold focus:outline-none focus:bg-manga-yellow/20"
+            placeholder="console.log('response')..."
+            className="flex-1 bg-cyber-black border border-zinc-800 focus:border-cyber-green px-3 py-2 text-xs text-white focus:outline-none rounded-none"
           />
           <button
             type="submit"
-            className="bg-manga-lime border-2 border-black px-3.5 py-2 font-black text-xs uppercase shadow-[2px_2px_0px_#000] active:translate-x-[1px] active:translate-y-[1px] flex items-center gap-1 shrink-0"
+            className="bg-cyber-black text-cyber-green border border-cyber-green hover:bg-cyber-green hover:text-cyber-black px-3.5 py-2 font-bold text-xs uppercase flex items-center gap-1 shrink-0 transition-all cursor-pointer rounded-none cyber-glow"
           >
-            <Send className="w-3.5 h-3.5 stroke-[2.5]" />
-            <span>{tr.sendButton}</span>
+            <Send className="w-3 h-3 stroke-[2]" />
+            <span>[SEND]</span>
           </button>
         </div>
       </form>

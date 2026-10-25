@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useTelegram } from "@/hooks/useTelegram";
 import { useLanguage } from "@/utils/translations";
 import { trackEvent } from "@/utils/analytics";
@@ -13,7 +13,8 @@ import {
   Sparkles,
   Zap,
   ArrowDown,
-  Code2,
+  Cpu,
+  Terminal,
 } from "lucide-react";
 
 export type SkillKey =
@@ -49,15 +50,15 @@ export function broadcastLevelUpdate(level: number, skills: string[]) {
         detail: { level, skills },
       })
     );
-  } catch {
-    // ignore storage errors
-  }
+  } catch {}
 }
 
 export default function TreePage() {
   const { user, dbUser, telegramId, username, setDbUser, initData } =
     useTelegram();
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
+  const isUz = lang === "uz";
+
   const [learnedSkills, setLearnedSkills] = useState<string[]>([]);
   const [level, setLevel] = useState<number>(1);
   const [activeSkillQuizKey, setActiveSkillQuizKey] = useState<SkillKey | null>(
@@ -70,7 +71,6 @@ export default function TreePage() {
     process.env.NEXT_PUBLIC_API_URL ||
     "https://skilltree-backend-swuh.onrender.com";
 
-  // Синхронизируем навыки и уровень напрямую из глобального контекста TelegramProvider
   useEffect(() => {
     if (dbUser) {
       const loadedSkills = Array.isArray(dbUser.skills) ? dbUser.skills : [];
@@ -85,7 +85,6 @@ export default function TreePage() {
   }, [dbUser]);
 
   const handleSkillCardClick = (skillName: SkillKey) => {
-    // Шаг 2 воронки: skill_clicked (клик по узлу в Дереве Навыков)
     trackEvent("skill_clicked", {
       skill: skillName,
       learned: learnedSkills.includes(skillName),
@@ -170,8 +169,7 @@ export default function TreePage() {
   );
 
   return (
-    <div className="space-y-5">
-      {/* Модальное окно проверки навыка с генерацией от ИИ */}
+    <div className="space-y-4 font-mono">
       <QuizModal
         skill={activeSkillQuizKey}
         quiz={activeQuiz}
@@ -179,99 +177,92 @@ export default function TreePage() {
         onSuccess={handleQuizSuccess}
       />
 
-      {/* Шапка профиля и текущего уровня */}
-      <section className="bg-white border-[3px] border-black shadow-[4px_4px_0px_#000] overflow-hidden">
-        <div className="bg-black text-white px-3.5 py-2 flex items-center justify-between">
-          <span className="text-[11px] font-black tracking-widest uppercase text-manga-yellow">
-            {t.hunterCardBadge}
+      {/* Шапка профиля и текущего уровня матрицы */}
+      <section className="cyber-panel p-3.5 space-y-3">
+        <div className="bg-cyber-black border-b border-cyber-green/30 px-2 py-1.5 flex items-center justify-between text-[10px] -mx-3.5 -mt-3.5 mb-3">
+          <span className="font-bold text-cyber-green uppercase tracking-widest">
+            OPERATOR_ID // {user?.username ? `@${user.username}` : "@developer"}
           </span>
-          <span className="text-[11px] font-mono bg-zinc-800 px-2 py-0.5 border border-zinc-600 text-manga-lime">
-            {user?.username ? `@${user.username}` : "@frontend_samurai"}
+          <span className="bg-cyber-dark text-cyber-blue px-2 py-0.5 border border-cyber-blue/40 font-bold uppercase text-[9px]">
+            MATRIX_STATUS: ACTIVE
           </span>
         </div>
 
-        <div className="p-3.5 bg-halftone space-y-3.5">
-          <div className="flex items-center gap-3">
-            {/* Рамка уровня */}
-            <div className="w-16 h-16 shrink-0 bg-manga-yellow border-[3px] border-black shadow-[3px_3px_0px_#000] flex flex-col items-center justify-center -rotate-2">
-              <span className="text-[10px] font-black uppercase">
-                {t.levelLabel}
-              </span>
-              <span className="text-2xl font-black leading-none">{level}</span>
-            </div>
-
-            <div className="min-w-0 flex-1">
-              <h1 className="text-lg font-black uppercase tracking-tight leading-tight truncate">
-                {user
-                  ? `${t.greeting}, ${user.first_name}!`
-                  : t.defaultUser}
-              </h1>
-              <div className="mt-1 inline-flex items-center gap-1.5 bg-manga-lime border-2 border-black px-2.5 py-0.5 shadow-[2px_2px_0px_#000]">
-                <Award className="w-4 h-4 stroke-[2.5] shrink-0" />
-                <span className="text-xs font-black uppercase tracking-wide">
-                  LVL {level} • {learnedSkills.length} /{" "}
-                  {FRONTEND_ROADMAP.length} {t.skillsWord}
-                </span>
-              </div>
-              <p className="text-[11px] font-bold text-zinc-700 mt-1">
-                {t.xpAccumulated} <span className="font-black">{totalXp} XP</span>
-              </p>
-            </div>
+        <div className="flex items-center gap-3">
+          <div className="w-14 h-14 shrink-0 bg-cyber-black border border-cyber-green flex flex-col items-center justify-center shadow-cyber-glow">
+            <span className="text-[8px] font-bold text-zinc-500 uppercase">
+              LEVEL
+            </span>
+            <span className="text-xl font-bold text-cyber-green leading-none">
+              {level.toString().padStart(2, "0")}
+            </span>
           </div>
 
-          {/* Прогресс-бар прохождения дерева */}
-          <div className="bg-white border-2 border-black p-2.5 shadow-[2px_2px_0px_#000]">
-            <div className="flex items-center justify-between text-xs font-black uppercase mb-1.5">
-              <span className="flex items-center gap-1">
-                <Zap className="w-3.5 h-3.5 fill-manga-yellow" />
-                {t.roadmapProgress}
+          <div className="min-w-0 flex-1">
+            <h1 className="text-base font-bold uppercase tracking-tight text-white truncate">
+              {user ? `> ${user.first_name.toUpperCase()}` : "> DEVELOPER"}
+            </h1>
+            <div className="mt-1 inline-flex items-center gap-1.5 bg-cyber-black border border-cyber-green/50 px-2 py-0.5 text-[10px] text-cyber-green">
+              <Award className="w-3.5 h-3.5 stroke-[2] shrink-0" />
+              <span>
+                {learnedSkills.length} / {FRONTEND_ROADMAP.length} MODULES_UNLOCKED
               </span>
-              <span>{progressPercent}%</span>
             </div>
-            <div className="w-full h-4 bg-zinc-200 border-2 border-black overflow-hidden p-0.5">
-              <div
-                className="h-full bg-manga-lime transition-all duration-300"
-                style={{ width: `${progressPercent}%` }}
-              />
-            </div>
+            <p className="text-[10px] text-zinc-400 mt-1">
+              ACCUMULATED_XP: <span className="text-cyber-green font-bold">{totalXp} XP</span>
+            </p>
+          </div>
+        </div>
+
+        {/* Прогресс-бар матрицы */}
+        <div className="bg-cyber-black border border-zinc-800 p-2 space-y-1">
+          <div className="flex items-center justify-between text-[10px] uppercase text-zinc-400">
+            <span className="flex items-center gap-1 text-cyber-green">
+              <Zap className="w-3 h-3 text-cyber-green fill-cyber-green" />
+              <span>ROADMAP_SYNCHRONIZATION</span>
+            </span>
+            <span className="font-bold text-white">{progressPercent}%</span>
+          </div>
+          <div className="w-full h-2 bg-cyber-dark border border-zinc-700 p-0.5">
+            <div
+              className="h-full bg-cyber-green shadow-cyber-glow transition-all duration-300"
+              style={{ width: `${progressPercent}%` }}
+            />
           </div>
         </div>
       </section>
 
-      {/* Интерактивный Roadmap: HTML -> CSS -> JavaScript -> React -> Next.js -> Tailwind */}
-      <section
-        aria-label={t.treeTitle}
-        className="bg-white border-[3px] border-black shadow-[4px_4px_0px_#000] p-3.5 bg-speedlines"
-      >
-        <div className="flex items-center justify-between border-b-[3px] border-black pb-2.5 mb-4">
+      {/* Интерактивный Roadmap */}
+      <section aria-label="Roadmap" className="cyber-panel p-3.5 space-y-3">
+        <div className="flex items-center justify-between border-b border-cyber-green/30 pb-2">
           <div>
-            <span className="text-[10px] font-black uppercase bg-manga-yellow px-2 py-0.5 border border-black">
-              {t.roadmapBadge}
+            <span className="text-[8px] font-bold uppercase text-zinc-500">
+              LEARNING_PATH
             </span>
-            <h2 className="text-lg font-black uppercase tracking-tight mt-1 flex items-center gap-1.5">
-              <Code2 className="w-5 h-5 stroke-[2.5]" />
-              {t.treeTitle}
+            <h2 className="text-sm font-bold uppercase tracking-wider text-white flex items-center gap-1.5 mt-0.5">
+              <Cpu className="w-4 h-4 text-cyber-green stroke-[2.5]" />
+              <span>SKILL_TREE_MATRIX</span>
             </h2>
           </div>
 
-          <div className="text-right text-[10px] font-bold space-y-1">
-            <div className="flex items-center justify-end gap-1.5">
-              <span className="w-3 h-3 bg-manga-lime border-2 border-black inline-block" />
-              <span className="font-black">{t.statusLearned}</span>
+          <div className="text-right text-[9px] space-y-0.5">
+            <div className="flex items-center justify-end gap-1.5 text-cyber-green">
+              <span className="w-2 h-2 bg-cyber-green inline-block shadow-cyber-glow" />
+              <span>VERIFIED</span>
             </div>
-            <div className="flex items-center justify-end gap-1.5">
-              <span className="w-3 h-3 bg-zinc-300 border-2 border-black inline-block" />
-              <span className="font-black">{t.statusNotLearned}</span>
+            <div className="flex items-center justify-end gap-1.5 text-zinc-500">
+              <span className="w-2 h-2 bg-zinc-700 inline-block" />
+              <span>LOCKED</span>
             </div>
           </div>
         </div>
 
-        <p className="text-xs font-bold text-zinc-800 mb-4 bg-manga-yellow/40 border-2 border-black p-2.5 shadow-[2px_2px_0px_#000]">
-          {t.treeHint}
+        <p className="text-[10px] text-zinc-400 bg-cyber-black border border-cyber-green/30 p-2">
+          &gt; Кликните по заблокированному модулю, чтобы запустить процедуру ИИ-экзамена из 10 вопросов.
         </p>
 
-        {/* Вертикальная цепочка: HTML -> CSS -> JavaScript -> React -> Next.js -> Tailwind */}
-        <div className="flex flex-col items-center">
+        {/* Цепочка модулей */}
+        <div className="flex flex-col items-center pt-1">
           {FRONTEND_ROADMAP.map((step, index) => {
             const isLearned = learnedSkills.includes(step.id);
             const isSaving = savingSkill === step.id;
@@ -283,51 +274,43 @@ export default function TreePage() {
                   type="button"
                   onClick={() => handleSkillCardClick(step.id)}
                   disabled={isSaving}
-                  className={`w-full text-left border-[3px] border-black p-3.5 transition-all select-none ${
+                  className={`w-full text-left border p-3 transition-all select-none rounded-none cursor-pointer ${
                     isLearned
-                      ? "bg-manga-lime text-black shadow-[4px_4px_0px_#000] -translate-y-0.5 cursor-default"
-                      : "bg-zinc-200 text-zinc-600 shadow-[4px_4px_0px_#000] hover:bg-zinc-300/80 active:translate-x-[2px] active:translate-y-[2px] cursor-pointer"
+                      ? "bg-cyber-dark text-white border-cyber-green shadow-cyber-glow"
+                      : "bg-cyber-black text-zinc-400 border-zinc-800 hover:border-cyber-green/50 hover:text-white"
                   }`}
                 >
                   <div className="flex items-center justify-between gap-2 mb-1.5">
                     <span
-                      className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-black uppercase border-2 border-black ${
+                      className={`px-1.5 py-0.5 text-[9px] font-bold uppercase border ${
                         isLearned
-                          ? "bg-black text-manga-lime"
-                          : "bg-zinc-300 text-zinc-700"
+                          ? "bg-cyber-green text-cyber-black border-cyber-green"
+                          : "bg-cyber-dark text-zinc-500 border-zinc-700"
                       }`}
                     >
-                      {stepTranslation.stepNumber}
+                      MOD_0{index + 1}
                     </span>
 
                     <div className="flex items-center gap-1.5">
-                      <span
-                        className={`text-[10px] font-black px-2 py-0.5 border-2 border-black ${
-                          isLearned
-                            ? "bg-white text-black"
-                            : "bg-zinc-300 text-zinc-700"
-                        }`}
-                      >
+                      <span className="text-[9px] font-bold px-1.5 py-0.5 bg-cyber-black border border-zinc-700 text-zinc-300">
                         +{step.xp} XP
                       </span>
                       <span
-                        className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-black uppercase border-2 border-black ${
+                        className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-[9px] font-bold uppercase border ${
                           isLearned
-                            ? "bg-white text-black"
-                            : "bg-zinc-800 text-manga-yellow"
+                            ? "border-cyber-green text-cyber-green bg-cyber-black"
+                            : "border-zinc-800 text-zinc-500 bg-cyber-black"
                         }`}
                       >
                         {isLearned ? (
                           <>
-                            <CheckCircle2 className="w-3 h-3 stroke-[3] text-green-700" />
-                            <span>{t.badgeConfirmed}</span>
+                            <CheckCircle2 className="w-3 h-3 text-cyber-green" />
+                            <span>UNLOCKED</span>
                           </>
                         ) : (
                           <>
-                            <Lock className="w-3 h-3 stroke-[2.5]" />
-                            <span>
-                              {isSaving ? t.badgeSaving : t.badgeTakeQuiz}
-                            </span>
+                            <Lock className="w-3 h-3 text-zinc-500" />
+                            <span>{isSaving ? "SAVING..." : "EXAM_REQUIRED"}</span>
                           </>
                         )}
                       </span>
@@ -337,57 +320,53 @@ export default function TreePage() {
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <h3
-                        className={`text-lg font-black uppercase tracking-tight leading-tight ${
-                          isLearned ? "text-black" : "text-zinc-700"
+                        className={`text-sm font-bold uppercase tracking-tight ${
+                          isLearned ? "text-cyber-green" : "text-white"
                         }`}
                       >
                         {step.name}
                       </h3>
-                      <p
-                        className={`text-xs font-bold mt-0.5 leading-snug ${
-                          isLearned ? "text-zinc-900" : "text-zinc-600"
-                        }`}
-                      >
+                      <p className="text-[10px] text-zinc-400 mt-0.5 leading-snug">
                         {stepTranslation.subtitle}
                       </p>
                     </div>
 
                     <div
-                      className={`w-10 h-10 shrink-0 border-2 border-black flex items-center justify-center shadow-[2px_2px_0px_#000] ${
+                      className={`w-8 h-8 shrink-0 border flex items-center justify-center ${
                         isLearned
-                          ? "bg-manga-yellow text-black"
-                          : "bg-zinc-300 text-zinc-700"
+                          ? "bg-cyber-green text-cyber-black border-cyber-green"
+                          : "bg-cyber-black text-zinc-600 border-zinc-800"
                       }`}
                     >
                       {isLearned ? (
-                        <Sparkles className="w-5 h-5 stroke-[2.5]" />
+                        <Sparkles className="w-4 h-4 stroke-[2]" />
                       ) : (
-                        <Lock className="w-5 h-5 stroke-[2.5]" />
+                        <Lock className="w-4 h-4 stroke-[2]" />
                       )}
                     </div>
                   </div>
                 </button>
 
-                {/* Стрелка-связка к следующему навыку в цепочке */}
+                {/* Связка между блоками */}
                 {index < FRONTEND_ROADMAP.length - 1 && (
-                  <div className="py-1.5 flex flex-col items-center">
+                  <div className="py-1 flex flex-col items-center">
                     <div
-                      className={`w-[3px] h-3 ${
-                        isLearned ? "bg-black" : "bg-zinc-400"
+                      className={`w-[1px] h-2.5 ${
+                        isLearned ? "bg-cyber-green shadow-cyber-glow" : "bg-zinc-800"
                       }`}
                     />
                     <div
-                      className={`w-6 h-6 border-2 border-black flex items-center justify-center shadow-[2px_2px_0px_#000] ${
+                      className={`w-5 h-5 border flex items-center justify-center text-[10px] ${
                         isLearned
-                          ? "bg-manga-lime text-black"
-                          : "bg-zinc-200 text-zinc-600"
+                          ? "border-cyber-green text-cyber-green bg-cyber-black"
+                          : "border-zinc-800 text-zinc-600 bg-cyber-black"
                       }`}
                     >
-                      <ArrowDown className="w-3.5 h-3.5 stroke-[3]" />
+                      <ArrowDown className="w-3 h-3" />
                     </div>
                     <div
-                      className={`w-[3px] h-3 ${
-                        isLearned ? "bg-black" : "bg-zinc-400"
+                      className={`w-[1px] h-2.5 ${
+                        isLearned ? "bg-cyber-green shadow-cyber-glow" : "bg-zinc-800"
                       }`}
                     />
                   </div>
@@ -398,51 +377,33 @@ export default function TreePage() {
         </div>
       </section>
 
-      {/* Тумблер уведомлений в Telegram */}
-      <section
-        aria-label={t.tgNotifyTitle}
-        className="bg-manga-cyan/30 border-[3px] border-black shadow-[4px_4px_0px_#000] p-3.5"
-      >
+      {/* Уведомления */}
+      <section className="cyber-panel p-3">
         <div className="flex items-center justify-between gap-3">
-          <div className="flex items-start gap-2.5">
-            <div
-              className={`w-10 h-10 shrink-0 border-2 border-black shadow-[2px_2px_0px_#000] flex items-center justify-center transition-colors ${
-                tgNotifications ? "bg-manga-yellow" : "bg-zinc-200"
-              }`}
-            >
-              <Bell className="w-5 h-5 stroke-[2.5]" />
-            </div>
+          <div className="flex items-center gap-2">
+            <Bell className="w-4 h-4 text-cyber-green" />
             <div>
-              <label
-                htmlFor="tg-vacancy-toggle"
-                className="text-sm font-black uppercase leading-tight block cursor-pointer"
-              >
-                {t.tgNotifyTitle}
-              </label>
-              <p className="text-xs font-bold text-zinc-700 mt-0.5">
-                {t.tgNotifyDescPrefix} {learnedSkills.length}
-              </p>
+              <span className="text-xs font-bold uppercase text-white block">
+                TELEGRAM_FEED_DISPATCH
+              </span>
+              <span className="text-[9px] text-zinc-500">
+                {isUz ? "Filtr bo'yicha bildirishnomalar" : "Уведомления по открытым навыкам"}
+              </span>
             </div>
           </div>
 
           <button
-            id="tg-vacancy-toggle"
             type="button"
             role="switch"
             aria-checked={tgNotifications}
             onClick={() => setTgNotifications((prev) => !prev)}
-            className={`relative w-16 h-9 shrink-0 border-[3px] border-black shadow-[2px_2px_0px_#000] transition-colors p-0.5 cursor-pointer ${
-              tgNotifications ? "bg-manga-lime" : "bg-zinc-300"
+            className={`px-3 py-1 text-[10px] font-bold border transition-all rounded-none cursor-pointer ${
+              tgNotifications
+                ? "bg-cyber-green text-cyber-black border-cyber-green shadow-cyber-glow"
+                : "bg-cyber-black text-zinc-500 border-zinc-800"
             }`}
           >
-            <span className="sr-only">{t.tgNotifyTitle}</span>
-            <span
-              className={`block w-6 h-6 bg-black text-white border border-black transition-transform flex items-center justify-center text-[9px] font-black ${
-                tgNotifications ? "translate-x-7" : "translate-x-0"
-              }`}
-            >
-              {tgNotifications ? "ON" : "OFF"}
-            </span>
+            {tgNotifications ? "[ACTIVE]" : "[MUTED]"}
           </button>
         </div>
       </section>

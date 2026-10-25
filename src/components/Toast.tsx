@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Sparkles } from "lucide-react";
+import { Terminal } from "lucide-react";
 
 export default function Toast() {
   const [toast, setToast] = useState<{ message: string; id: number } | null>(
@@ -32,12 +32,12 @@ export default function Toast() {
   if (!toast) return null;
 
   return (
-    <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[9999] w-[90%] max-w-[390px] animate-in slide-in-from-top-4 duration-200 pointer-events-none">
-      <div className="bg-manga-lime border-[3.5px] border-black p-3.5 shadow-[5px_5px_0px_#000] flex items-center gap-3 pointer-events-auto">
-        <div className="w-8 h-8 bg-black text-manga-yellow border-2 border-black flex items-center justify-center shrink-0 shadow-[2px_2px_0px_#000]">
-          <Sparkles className="w-4.5 h-4.5 stroke-[2.5]" />
+    <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[9999] w-[92%] max-w-[400px] animate-in slide-in-from-top-4 duration-200 pointer-events-none font-mono">
+      <div className="bg-cyber-dark border border-cyber-green p-3 shadow-cyber-glow flex items-center gap-3 pointer-events-auto rounded-none">
+        <div className="w-7 h-7 bg-cyber-black text-cyber-green border border-cyber-green flex items-center justify-center shrink-0">
+          <Terminal className="w-3.5 h-3.5 stroke-[2.5]" />
         </div>
-        <p className="text-xs font-black uppercase text-black leading-snug flex-1">
+        <p className="text-xs font-bold uppercase text-cyber-green leading-snug flex-1">
           {toast.message}
         </p>
       </div>

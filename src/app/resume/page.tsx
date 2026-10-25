@@ -1,19 +1,18 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useTelegram } from "@/hooks/useTelegram";
 import { useLanguage } from "@/utils/translations";
 import { trackEvent } from "@/utils/analytics";
 import { showToast } from "@/utils/toast";
 import {
-  Sparkles,
+  Terminal,
   Copy,
   Check,
   Github,
   Code2,
   Briefcase,
-  FolderGit2,
-  FileText,
+  FileCode2,
   Globe,
   UserCheck,
   Save,
@@ -22,7 +21,7 @@ import {
   AlertCircle,
   Bot,
   Building2,
-  Send,
+  Cpu,
 } from "lucide-react";
 
 export default function ResumePage() {
@@ -30,6 +29,7 @@ export default function ResumePage() {
     useTelegram();
   const { lang, t } = useLanguage();
   const r = t.resume;
+  const isUz = lang === "uz";
 
   const apiUrl =
     process.env.NEXT_PUBLIC_API_URL ||
@@ -41,7 +41,7 @@ export default function ResumePage() {
   const [stack, setStack] = useState(
     "TypeScript, React 19, Next.js (App Router), Tailwind CSS, Git, REST API"
   );
-  const [github, setGithub] = useState("https://github.com/alex-kuro-dev");
+  const [github, setGithub] = useState("https://github.com/developer");
   const [portfolio, setPortfolio] = useState("");
   const [aboutMe, setAboutMe] = useState("");
   const [projects, setProjects] = useState<string>(r.defaultProjects);
@@ -53,7 +53,7 @@ export default function ResumePage() {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
-  // Состояние генератора сопроводительных писем (AI Cover Letter)
+  // AI Cover Letter
   const [targetJobTitle, setTargetJobTitle] = useState(
     "Junior Frontend Developer"
   );
@@ -62,14 +62,12 @@ export default function ResumePage() {
   const [coverLetterText, setCoverLetterText] = useState("");
   const [copiedCoverLetter, setCopiedCoverLetter] = useState(false);
 
-  // При переключении языка обновляем дефолтный текст пет-проектов, если пользователь его еще не менял вручную
   useEffect(() => {
     if (!customEditedProjects) {
       setProjects(r.defaultProjects);
     }
   }, [lang, r.defaultProjects, customEditedProjects]);
 
-  // Синхронизация данных профиля напрямую из глобального контекста TelegramProvider
   useEffect(() => {
     if (dbUser) {
       if (dbUser.github_url !== undefined && dbUser.github_url !== "") {
@@ -93,7 +91,6 @@ export default function ResumePage() {
     }
   }, [dbUser, isLoading]);
 
-  // Сохранение данных профиля на бэкенд через PUT /api/users/profile
   const handleSaveProfile = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setIsSaving(true);
@@ -125,7 +122,7 @@ export default function ResumePage() {
       });
 
       if (!res.ok) {
-        throw new Error(`Статус ответа: ${res.status}`);
+        throw new Error(`Статус: ${res.status}`);
       }
 
       const result = await res.json();
@@ -134,16 +131,11 @@ export default function ResumePage() {
       }
 
       setSaveSuccess(true);
-      // Автоматическое скрытие зеленого уведомления через 4 секунды
-      setTimeout(() => {
-        setSaveSuccess(false);
-      }, 4000);
+      setTimeout(() => setSaveSuccess(false), 3000);
     } catch (error) {
-      console.error("Ошибка при сохранении профиля:", error);
+      console.error("Ошибка при сохранении:", error);
       setSaveError(r.saveErrorNotification || "Ошибка сохранения");
-      setTimeout(() => {
-        setSaveError(null);
-      }, 4000);
+      setTimeout(() => setSaveError(null), 3000);
     } finally {
       setIsSaving(false);
     }
@@ -169,7 +161,7 @@ ${r.tplHighlights}`;
     try {
       await navigator.clipboard.writeText(displayResume);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
+      setTimeout(() => setCopied(false), 2000);
     } catch {
       setCopied(true);
     }
@@ -206,9 +198,9 @@ ${r.tplHighlights}`;
         if (data.coverLetter) {
           setCoverLetterText(data.coverLetter);
           showToast(
-            lang === "uz"
+            isUz
               ? "Kuzatuv xati yaratildi!"
-              : "Сопроводительное письмо создано!"
+              : "Сопроводительное письмо сформировано!"
           );
         }
       }
@@ -225,11 +217,7 @@ ${r.tplHighlights}`;
         await navigator.clipboard.writeText(coverLetterText);
       }
       setCopiedCoverLetter(true);
-      showToast(
-        lang === "uz"
-          ? "Kuzatuv xati nusxalandi!"
-          : "Сопроводительное письмо скопировано в буфер!"
-      );
+      showToast(isUz ? "Nusxa olindi!" : "Скопировано в буфер обмена!");
       setTimeout(() => setCopiedCoverLetter(false), 2000);
     } catch (e) {
       console.warn("Copy error:", e);
@@ -237,392 +225,239 @@ ${r.tplHighlights}`;
   };
 
   return (
-    <div className="space-y-4">
-      {/* Header Banner */}
-      <section className="bg-manga-cyan border-[3px] border-black shadow-[4px_4px_0px_#000] p-3.5 bg-halftone-cyan">
-        <div className="flex items-center justify-between gap-2">
-          <span className="inline-block bg-black text-manga-cyan text-[10px] font-black uppercase px-2 py-0.5 tracking-wider">
-            {r.heroBadge}
-          </span>
+    <div className="space-y-4 font-mono">
+      {/* Шапка резюме */}
+      <section className="cyber-panel p-3.5 space-y-2">
+        <div className="flex items-center justify-between text-[9px] text-zinc-500 uppercase">
+          <span className="text-cyber-green font-bold">&gt; CLEARANCE_FILE // DEVELOPER_CV</span>
           {isLoadingProfile && (
-            <span className="inline-flex items-center gap-1 bg-white border border-black px-1.5 py-0.5 text-[9px] font-black uppercase">
+            <span className="flex items-center gap-1 text-cyber-cyan">
               <Loader2 className="w-3 h-3 animate-spin" />
-              <span>SYNC...</span>
+              <span>SYNCING...</span>
             </span>
           )}
         </div>
-        <h1 className="text-2xl font-black uppercase tracking-tight leading-none mt-1.5">
-          {r.heroTitle}
+        <h1 className="text-lg font-bold uppercase tracking-tight text-white">
+          &gt; DEVELOPER_PROFILE &amp; AI_LETTER
         </h1>
-        <div className="mt-2.5 mb-2 bg-white border-2 border-black p-2.5 shadow-[2px_2px_0px_#000] speech-bubble-left">
-          <p className="text-xs font-bold leading-snug">{r.heroBubble}</p>
-        </div>
+        <p className="text-xs text-zinc-400 bg-cyber-black border border-cyber-green/30 p-2">
+          &gt; Настройте параметры профиля для автоматической подстановки в ИИ-сопроводительные письма.
+        </p>
       </section>
 
-      {/* Красивое зеленое уведомление об успешном сохранении */}
+      {/* Уведомление об успехе */}
       {saveSuccess && (
-        <div
-          role="status"
-          aria-live="polite"
-          className="bg-manga-lime border-[3px] border-black p-3.5 shadow-[4px_4px_0px_#000] flex items-center justify-between gap-3 animate-in fade-in zoom-in-95 duration-200"
-        >
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 bg-black text-manga-lime border-2 border-black flex items-center justify-center shrink-0 shadow-[2px_2px_0px_#000]">
-              <CheckCircle2 className="w-5 h-5 stroke-[3]" />
-            </div>
-            <div>
-              <p className="text-sm font-black uppercase text-black leading-tight">
-                {lang === "uz"
-                  ? "Ma'lumotlar saqlandi!"
-                  : "Данные сохранены!"}
-              </p>
-              <p className="text-[11px] font-bold text-black/80 mt-0.5">
-                {r.savedSuccessSub}
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => setSaveSuccess(false)}
-            className="w-7 h-7 bg-white hover:bg-black hover:text-white border-2 border-black font-black text-xs flex items-center justify-center shadow-[1px_1px_0px_#000] active:translate-x-[1px] active:translate-y-[1px] transition-colors"
-          >
-            ✕
+        <div className="cyber-panel p-3 border-cyber-green shadow-cyber-glow flex items-center justify-between text-xs text-cyber-green">
+          <span className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 stroke-[2.5]" />
+            <span>&gt; PROFILE_UPDATED // CHANGES_PERSISTED</span>
+          </span>
+          <button type="button" onClick={() => setSaveSuccess(false)} className="text-zinc-500 hover:text-white">
+            [x]
           </button>
         </div>
       )}
 
       {/* Уведомление об ошибке */}
       {saveError && (
-        <div
-          role="alert"
-          className="bg-manga-pink border-[3px] border-black p-3 shadow-[4px_4px_0px_#000] flex items-center justify-between gap-3"
-        >
-          <div className="flex items-center gap-2">
-            <AlertCircle className="w-5 h-5 stroke-[2.5] text-black" />
-            <p className="text-xs font-black uppercase text-black">{saveError}</p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setSaveError(null)}
-            className="text-xs font-black px-1.5 py-0.5 border border-black bg-white"
-          >
-            ✕
+        <div className="cyber-panel-red p-3 flex items-center justify-between text-xs text-cyber-red">
+          <span className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4" />
+            <span>&gt; ERROR: {saveError}</span>
+          </span>
+          <button type="button" onClick={() => setSaveError(null)} className="text-zinc-500 hover:text-white">
+            [x]
           </button>
         </div>
       )}
 
-      {/* Form Card */}
-      <form
-        onSubmit={handleSaveProfile}
-        className="bg-white border-[3px] border-black shadow-[4px_4px_0px_#000] p-3.5 space-y-3.5"
-      >
-        {/* Желаемая должность */}
+      {/* Форма редактирования профиля */}
+      <form onSubmit={handleSaveProfile} className="cyber-panel p-3.5 space-y-3">
         <div>
-          <label
-            htmlFor="desired-role"
-            className="flex items-center gap-1.5 text-xs font-black uppercase mb-1"
-          >
-            <Briefcase className="w-3.5 h-3.5 stroke-[2.5]" />
-            {r.labelRole}
+          <label htmlFor="desired-role" className="block text-[10px] text-zinc-400 uppercase mb-1">
+            &gt; TARGET_POSITION
           </label>
           <input
             id="desired-role"
             type="text"
             value={role}
             onChange={(e) => setRole(e.target.value)}
-            placeholder={r.placeholderRole}
-            className="w-full bg-manga-bg border-2 border-black px-3 py-2 text-xs font-bold focus:outline-none focus:bg-manga-yellow/20 shadow-[1px_1px_0px_#000]"
+            className="w-full bg-cyber-black border border-zinc-800 focus:border-cyber-green px-2.5 py-1.5 text-xs text-white focus:outline-none rounded-none"
           />
         </div>
 
-        {/* Стек технологий */}
         <div>
-          <label
-            htmlFor="tech-stack"
-            className="flex items-center gap-1.5 text-xs font-black uppercase mb-1"
-          >
-            <Code2 className="w-3.5 h-3.5 stroke-[2.5]" />
-            {r.labelStack}
+          <label htmlFor="tech-stack" className="block text-[10px] text-zinc-400 uppercase mb-1">
+            &gt; TECH_STACK
           </label>
           <input
             id="tech-stack"
             type="text"
             value={stack}
             onChange={(e) => setStack(e.target.value)}
-            placeholder={r.placeholderStack}
-            className="w-full bg-manga-bg border-2 border-black px-3 py-2 text-xs font-bold focus:outline-none focus:bg-manga-yellow/20 shadow-[1px_1px_0px_#000]"
+            className="w-full bg-cyber-black border border-zinc-800 focus:border-cyber-green px-2.5 py-1.5 text-xs text-white focus:outline-none rounded-none"
           />
         </div>
 
-        {/* Ссылка на GitHub */}
-        <div>
-          <label
-            htmlFor="github-url"
-            className="flex items-center gap-1.5 text-xs font-black uppercase mb-1"
-          >
-            <Github className="w-3.5 h-3.5 stroke-[2.5]" />
-            {r.labelGithub}
-          </label>
-          <input
-            id="github-url"
-            type="url"
-            inputMode="url"
-            value={github}
-            onChange={(e) => setGithub(e.target.value)}
-            placeholder={r.placeholderGithub}
-            className="w-full bg-manga-bg border-2 border-black px-3 py-2 text-xs font-bold focus:outline-none focus:bg-manga-yellow/20 shadow-[1px_1px_0px_#000]"
-          />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <div>
+            <label htmlFor="github-url" className="block text-[10px] text-zinc-400 uppercase mb-1">
+              &gt; GITHUB_URL
+            </label>
+            <input
+              id="github-url"
+              type="url"
+              value={github}
+              onChange={(e) => setGithub(e.target.value)}
+              className="w-full bg-cyber-black border border-zinc-800 focus:border-cyber-green px-2.5 py-1.5 text-xs text-white focus:outline-none rounded-none"
+            />
+          </div>
+          <div>
+            <label htmlFor="portfolio-url" className="block text-[10px] text-zinc-400 uppercase mb-1">
+              &gt; PORTFOLIO_URL
+            </label>
+            <input
+              id="portfolio-url"
+              type="url"
+              value={portfolio}
+              onChange={(e) => setPortfolio(e.target.value)}
+              className="w-full bg-cyber-black border border-zinc-800 focus:border-cyber-green px-2.5 py-1.5 text-xs text-white focus:outline-none rounded-none"
+            />
+          </div>
         </div>
 
-        {/* Ссылка на Портфолио */}
         <div>
-          <label
-            htmlFor="portfolio-url"
-            className="flex items-center gap-1.5 text-xs font-black uppercase mb-1"
-          >
-            <Globe className="w-3.5 h-3.5 stroke-[2.5]" />
-            {r.labelPortfolio}
-          </label>
-          <input
-            id="portfolio-url"
-            type="url"
-            inputMode="url"
-            value={portfolio}
-            onChange={(e) => setPortfolio(e.target.value)}
-            placeholder={r.placeholderPortfolio}
-            className="w-full bg-manga-bg border-2 border-black px-3 py-2 text-xs font-bold focus:outline-none focus:bg-manga-yellow/20 shadow-[1px_1px_0px_#000]"
-          />
-        </div>
-
-        {/* О себе / Био */}
-        <div>
-          <label
-            htmlFor="about-me"
-            className="flex items-center gap-1.5 text-xs font-black uppercase mb-1"
-          >
-            <UserCheck className="w-3.5 h-3.5 stroke-[2.5]" />
-            {r.labelAboutMe}
+          <label htmlFor="about-me" className="block text-[10px] text-zinc-400 uppercase mb-1">
+            &gt; ABOUT_ME // BIO
           </label>
           <textarea
             id="about-me"
             rows={2}
             value={aboutMe}
             onChange={(e) => setAboutMe(e.target.value)}
-            placeholder={r.placeholderAboutMe}
-            className="w-full bg-manga-bg border-2 border-black px-3 py-2 text-xs font-bold focus:outline-none focus:bg-manga-yellow/20 shadow-[1px_1px_0px_#000] resize-none"
+            className="w-full bg-cyber-black border border-zinc-800 focus:border-cyber-green px-2.5 py-1.5 text-xs text-white focus:outline-none rounded-none resize-none"
           />
         </div>
 
-        {/* Описание пет-проектов */}
-        <div>
-          <label
-            htmlFor="pet-projects"
-            className="flex items-center gap-1.5 text-xs font-black uppercase mb-1"
-          >
-            <FolderGit2 className="w-3.5 h-3.5 stroke-[2.5]" />
-            {r.labelProjects}
-          </label>
-          <textarea
-            id="pet-projects"
-            rows={3}
-            value={projects}
-            onChange={(e) => {
-              setCustomEditedProjects(true);
-              setProjects(e.target.value);
-            }}
-            placeholder={r.placeholderProjects}
-            className="w-full bg-manga-bg border-2 border-black px-3 py-2 text-xs font-bold focus:outline-none focus:bg-manga-yellow/20 shadow-[1px_1px_0px_#000] resize-none"
-          />
-        </div>
-
-        {/* Actions Button Group: Главная кнопка Сохранить + Кнопка генерации резюме */}
-        <div className="pt-1 space-y-2">
-          {/* Главная кнопка Сохранить */}
+        <div className="pt-1">
           <button
             type="submit"
             disabled={isSaving}
-            className="w-full py-3.5 px-4 bg-manga-lime border-[3px] border-black shadow-[4px_4px_0px_#000] font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-[#34d399] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[1px_1px_0px_#000] transition-all disabled:opacity-75 disabled:cursor-not-allowed cursor-pointer"
+            className="w-full py-2.5 px-3 bg-cyber-black text-cyber-green border border-cyber-green hover:bg-cyber-green hover:text-cyber-black font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all cursor-pointer rounded-none cyber-glow"
           >
             {isSaving ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin stroke-[2.5]" />
-                <span>{r.savingButton}</span>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>SAVING_DATA...</span>
               </>
             ) : (
               <>
-                <Save className="w-4 h-4 stroke-[2.5]" />
-                <span>{r.saveButton}</span>
+                <Save className="w-4 h-4" />
+                <span>&gt; PERSIST_PROFILE_DATA</span>
               </>
             )}
-          </button>
-
-          {/* Кнопка сгенерировать резюме */}
-          <button
-            type="button"
-            onClick={() => setCopied(false)}
-            className="w-full py-2.5 px-4 bg-manga-yellow border-2 border-black shadow-[2px_2px_0px_#000] font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-yellow-400 active:translate-x-[1px] active:translate-y-[1px] active:shadow-[1px_1px_0px_#000] transition-all cursor-pointer"
-          >
-            <Sparkles className="w-3.5 h-3.5 stroke-[2.5]" />
-            <span>{r.generateButton}</span>
           </button>
         </div>
       </form>
 
-      {/* Result Card for Copying */}
-      <section
-        aria-label={r.resultHeader}
-        className="bg-white border-[3px] border-black shadow-[4px_4px_0px_#000] overflow-hidden"
-      >
-        <div className="bg-black text-white px-3.5 py-2 flex items-center justify-between">
-          <span className="flex items-center gap-1.5 text-xs font-black uppercase text-manga-yellow">
-            <FileText className="w-3.5 h-3.5" />
-            {r.resultHeader}
+      {/* Просмотр резюме */}
+      <section className="cyber-panel overflow-hidden">
+        <div className="bg-cyber-black border-b border-cyber-green/30 px-3 py-2 flex items-center justify-between text-[10px]">
+          <span className="text-zinc-400 uppercase flex items-center gap-1.5">
+            <FileCode2 className="w-3.5 h-3.5 text-cyber-green" />
+            <span>RESUME_PREVIEW.TXT</span>
           </span>
           <button
             type="button"
             onClick={handleCopy}
-            className={`px-2.5 py-1 border border-white text-[11px] font-black uppercase flex items-center gap-1 transition-colors cursor-pointer ${
-              copied
-                ? "bg-manga-lime text-black border-black"
-                : "bg-manga-pink text-white hover:bg-manga-yellow hover:text-black"
-            }`}
+            className="px-2 py-0.5 border border-cyber-green/50 bg-cyber-dark text-cyber-green hover:bg-cyber-green hover:text-cyber-black text-[9px] font-bold uppercase transition-all cursor-pointer"
           >
-            {copied ? (
-              <>
-                <Check className="w-3.5 h-3.5 stroke-[3]" />
-                <span>{r.copiedButton}</span>
-              </>
-            ) : (
-              <>
-                <Copy className="w-3.5 h-3.5" />
-                <span>{r.copyButton}</span>
-              </>
-            )}
+            {copied ? "[COPIED]" : "[COPY_TO_CLIPBOARD]"}
           </button>
         </div>
-
-        <div className="p-3.5 bg-manga-bg">
-          <pre className="whitespace-pre-wrap font-mono text-xs font-bold leading-relaxed text-black bg-white border-2 border-black p-3 shadow-[2px_2px_0px_#000]">
+        <div className="p-3 bg-cyber-black">
+          <pre className="whitespace-pre-wrap text-[11px] font-mono leading-relaxed text-zinc-300">
             {displayResume}
           </pre>
         </div>
       </section>
 
-      {/* Секция: ИИ Генератор сопроводительных писем (AI Cover Letter Generator) */}
-      <section
-        aria-label="AI Cover Letter Generator"
-        className="bg-white border-[3px] border-black shadow-[4px_4px_0px_#000] overflow-hidden"
-      >
-        <div className="bg-manga-yellow border-b-[3px] border-black px-3.5 py-2.5 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="w-7 h-7 bg-black text-manga-yellow border-2 border-black flex items-center justify-center shadow-[1px_1px_0px_#000]">
-              <Sparkles className="w-4 h-4 stroke-[2.5]" />
-            </span>
-            <div>
-              <span className="block text-[9px] font-black uppercase tracking-wider text-zinc-900">
-                GEMINI 2.5 FLASH
-              </span>
-              <h2 className="text-sm font-black uppercase text-black leading-none">
-                {lang === "uz" ? "AI Kuzatuv xati" : "ИИ Сопроводительное письмо"}
-              </h2>
-            </div>
-          </div>
-          <span className="bg-black text-manga-lime text-[10px] font-black px-2 py-0.5 uppercase border border-black">
-            HIGH CONVERSION
+      {/* Генератор сопроводительных писем */}
+      <section className="cyber-panel p-3.5 space-y-3">
+        <div className="border-b border-cyber-green/30 pb-2 flex items-center justify-between">
+          <span className="text-xs font-bold uppercase text-white flex items-center gap-1.5">
+            <Cpu className="w-4 h-4 text-cyber-cyan" />
+            <span>AI_COVER_LETTER_DISPATCH</span>
+          </span>
+          <span className="text-[9px] bg-cyber-black border border-cyber-green/40 px-1.5 py-0.5 text-cyber-green">
+            GEMINI 2.5
           </span>
         </div>
 
-        <div className="p-3.5 space-y-3 bg-halftone">
-          <p className="text-xs font-bold text-zinc-800 bg-white border-2 border-black p-2.5 shadow-[2px_2px_0px_#000]">
-            {lang === "uz"
-              ? "Vakansiya va kompaniya nomini kiriting. Gemini neyrotarmog'i profilingiz asosida rekruterlar uchun qisqa va kuchli xat yozib beradi."
-              : "Укажите вакансию и компанию. Нейросеть Gemini составит короткое, цепляющее сопроводительное письмо на основе вашего GitHub и стека."}
-          </p>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            <div>
-              <label className="block text-[10px] font-black uppercase mb-1">
-                {lang === "uz" ? "Vakansiya nomi" : "Вакансия"}
-              </label>
-              <input
-                type="text"
-                value={targetJobTitle}
-                onChange={(e) => setTargetJobTitle(e.target.value)}
-                placeholder="Junior Frontend Developer"
-                className="w-full bg-white border-2 border-black px-3 py-2 text-xs font-bold focus:outline-none focus:bg-manga-yellow/20 shadow-[1px_1px_0px_#000]"
-              />
-            </div>
-            <div>
-              <label className="block text-[10px] font-black uppercase mb-1">
-                {lang === "uz" ? "Kompaniya nomi" : "Компания"}
-              </label>
-              <input
-                type="text"
-                value={targetCompany}
-                onChange={(e) => setTargetCompany(e.target.value)}
-                placeholder="Яндекс / EPAM / Click"
-                className="w-full bg-white border-2 border-black px-3 py-2 text-xs font-bold focus:outline-none focus:bg-manga-yellow/20 shadow-[1px_1px_0px_#000]"
-              />
-            </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div>
+            <label className="block text-[9px] text-zinc-400 uppercase mb-1">
+              &gt; VACANCY_TITLE
+            </label>
+            <input
+              type="text"
+              value={targetJobTitle}
+              onChange={(e) => setTargetJobTitle(e.target.value)}
+              className="w-full bg-cyber-black border border-zinc-800 focus:border-cyber-green px-2.5 py-1.5 text-xs text-white focus:outline-none rounded-none"
+            />
           </div>
-
-          <button
-            type="button"
-            onClick={handleGenerateCoverLetter}
-            disabled={isGeneratingCoverLetter}
-            className="w-full py-3 px-4 bg-manga-orange hover:bg-manga-pink text-white border-[3px] border-black font-black text-xs uppercase tracking-wider shadow-[4px_4px_0px_#000] active:translate-x-[2px] active:translate-y-[2px] transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75"
-          >
-            {isGeneratingCoverLetter ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin stroke-[2.5]" />
-                <span>{lang === "uz" ? "AI yozmoqda..." : "ИИ пишет письмо..."}</span>
-              </>
-            ) : (
-              <>
-                <Bot className="w-4 h-4 stroke-[2.5]" />
-                <span>
-                  {lang === "uz"
-                    ? "Kuzatuv xatini yaratish"
-                    : "Сгенерировать сопроводительное письмо"}
-                </span>
-              </>
-            )}
-          </button>
-
-          {coverLetterText && (
-            <div className="space-y-2 pt-2 animate-in fade-in duration-200">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black uppercase text-zinc-700">
-                  {lang === "uz" ? "Natija:" : "Готовое письмо:"}
-                </span>
-                <button
-                  type="button"
-                  onClick={handleCopyCoverLetter}
-                  className="inline-flex items-center gap-1 bg-white border-2 border-black px-2.5 py-1 text-[10px] font-black uppercase shadow-[2px_2px_0px_#000] hover:bg-manga-lime transition-colors cursor-pointer"
-                >
-                  {copiedCoverLetter ? (
-                    <>
-                      <Check className="w-3 h-3 text-green-700 stroke-[3]" />
-                      <span>{lang === "uz" ? "Nusxalandi" : "Скопировано"}</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-3 h-3 stroke-[2.5]" />
-                      <span>{lang === "uz" ? "Nusxa olish" : "Копировать"}</span>
-                    </>
-                  )}
-                </button>
-              </div>
-
-              <textarea
-                value={coverLetterText}
-                onChange={(e) => setCoverLetterText(e.target.value)}
-                rows={7}
-                className="w-full bg-white border-2 border-black p-3 text-xs font-bold leading-relaxed text-black shadow-[2px_2px_0px_#000] focus:outline-none focus:bg-manga-yellow/10 resize-none font-sans"
-              />
-            </div>
-          )}
+          <div>
+            <label className="block text-[9px] text-zinc-400 uppercase mb-1">
+              &gt; COMPANY_NAME
+            </label>
+            <input
+              type="text"
+              value={targetCompany}
+              onChange={(e) => setTargetCompany(e.target.value)}
+              className="w-full bg-cyber-black border border-zinc-800 focus:border-cyber-green px-2.5 py-1.5 text-xs text-white focus:outline-none rounded-none"
+            />
+          </div>
         </div>
+
+        <button
+          type="button"
+          onClick={handleGenerateCoverLetter}
+          disabled={isGeneratingCoverLetter}
+          className="w-full py-2.5 px-3 bg-cyber-black text-cyber-cyan border border-cyber-cyan hover:bg-cyber-cyan hover:text-cyber-black font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all cursor-pointer rounded-none cyber-glow-blue"
+        >
+          {isGeneratingCoverLetter ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span>&gt; AI_GENERATING_TRANSMISSION...</span>
+            </>
+          ) : (
+            <>
+              <Bot className="w-4 h-4" />
+              <span>&gt; COMPILE_COVER_LETTER</span>
+            </>
+          )}
+        </button>
+
+        {coverLetterText && (
+          <div className="space-y-2 pt-1 animate-in fade-in duration-200">
+            <div className="flex items-center justify-between text-[10px]">
+              <span className="text-zinc-400 uppercase">OUTPUT:</span>
+              <button
+                type="button"
+                onClick={handleCopyCoverLetter}
+                className="px-2 py-0.5 bg-cyber-black border border-cyber-green/50 text-cyber-green hover:bg-cyber-green hover:text-cyber-black text-[9px] font-bold uppercase transition-all cursor-pointer"
+              >
+                {copiedCoverLetter ? "[COPIED]" : "[COPY]"}
+              </button>
+            </div>
+            <textarea
+              value={coverLetterText}
+              onChange={(e) => setCoverLetterText(e.target.value)}
+              rows={7}
+              className="w-full bg-cyber-black border border-cyber-green/50 p-2.5 text-xs font-mono leading-relaxed text-zinc-200 focus:outline-none focus:border-cyber-green resize-none rounded-none"
+            />
+          </div>
+        )}
       </section>
     </div>
   );

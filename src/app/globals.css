@@ -3,101 +3,145 @@
 @tailwind utilities;
 
 :root {
-  --ink: #111111;
-  --paper: #fbf8f1;
+  --cyber-black: #050505;
+  --cyber-dark: #111111;
+  --cyber-green: #00ff41;
+  --cyber-blue: #03a9f4;
+  --cyber-red: #ff003c;
 }
 
 * {
   box-sizing: border-box;
   -webkit-tap-highlight-color: transparent;
+  border-radius: 0px !important;
 }
 
 body {
-  background-color: #1a1a1a;
-  color: #111111;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    "Helvetica Neue", Arial, sans-serif;
+  background-color: #050505;
+  color: #00ff41;
+  font-family: "Space Mono", "Fira Code", "JetBrains Mono", ui-monospace, SFMono-Regular,
+    Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   overflow-x: hidden;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Manga Halftone & Speedline Patterns */
-.bg-halftone {
-  background-color: #fbf8f1;
-  background-image: radial-gradient(rgba(17, 17, 17, 0.14) 1.25px, transparent 1.25px);
-  background-size: 14px 14px;
-}
-
-.bg-halftone-dense {
-  background-image: radial-gradient(rgba(17, 17, 17, 0.22) 1.5px, transparent 1.5px);
-  background-size: 8px 8px;
-}
-
-.bg-halftone-yellow {
-  background-color: #ffe600;
-  background-image: radial-gradient(rgba(17, 17, 17, 0.16) 1.5px, transparent 1.5px);
-  background-size: 10px 10px;
-}
-
-.bg-halftone-lime {
-  background-color: #b8ff01;
-  background-image: radial-gradient(rgba(17, 17, 17, 0.15) 1.5px, transparent 1.5px);
-  background-size: 10px 10px;
-}
-
-.bg-halftone-cyan {
-  background-color: #00f0ff;
-  background-image: radial-gradient(rgba(17, 17, 17, 0.15) 1.5px, transparent 1.5px);
-  background-size: 10px 10px;
-}
-
-.bg-speedlines {
-  background-image: repeating-linear-gradient(
-    -45deg,
-    transparent,
-    transparent 8px,
-    rgba(17, 17, 17, 0.06) 8px,
-    rgba(17, 17, 17, 0.06) 10px
+/* Subtle CRT scanline overlay */
+.cyber-scanlines {
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0),
+    rgba(255, 255, 255, 0) 50%,
+    rgba(0, 0, 0, 0.25) 50%,
+    rgba(0, 0, 0, 0.25)
   );
+  background-size: 100% 4px;
 }
 
-/* Hide scrollbars for horizontal filter strips while keeping scroll functionality */
+/* Cyber Terminal Panel */
+.cyber-panel {
+  background-color: #111111;
+  border: 1px solid rgba(0, 255, 65, 0.4);
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.8), inset 0 0 15px rgba(0, 255, 65, 0.03);
+  position: relative;
+}
+
+.cyber-panel-blue {
+  background-color: #111111;
+  border: 1px solid rgba(3, 169, 244, 0.5);
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.8), inset 0 0 15px rgba(3, 169, 244, 0.04);
+}
+
+.cyber-panel-red {
+  background-color: #111111;
+  border: 1px solid rgba(255, 0, 60, 0.6);
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.8), inset 0 0 15px rgba(255, 0, 60, 0.05);
+}
+
+/* Neon Glow Effect for Buttons and Badges */
+.cyber-glow {
+  box-shadow: 0 0 10px rgba(0, 255, 65, 0.5), 0 0 20px rgba(0, 255, 65, 0.2);
+}
+
+.cyber-glow-blue {
+  box-shadow: 0 0 10px rgba(3, 169, 244, 0.5), 0 0 20px rgba(3, 169, 244, 0.2);
+}
+
+.cyber-glow-red {
+  box-shadow: 0 0 10px rgba(255, 0, 60, 0.6), 0 0 20px rgba(255, 0, 60, 0.25);
+}
+
+/* Cyber Glitch Distortion Effect */
+.cyber-glitch {
+  position: relative;
+  transition: all 0.15s ease-in-out;
+}
+
+.cyber-glitch:hover {
+  text-shadow: 1.5px 0 #03a9f4, -1.5px 0 #ff003c;
+  animation: glitch-anim 0.25s infinite;
+}
+
+@keyframes glitch-anim {
+  0% {
+    transform: translate(0);
+  }
+  20% {
+    transform: translate(-1px, 1px);
+  }
+  40% {
+    transform: translate(-1px, -1px);
+  }
+  60% {
+    transform: translate(1px, 1px);
+  }
+  80% {
+    transform: translate(1px, -1px);
+  }
+  100% {
+    transform: translate(0);
+  }
+}
+
+/* Terminal Cursor Blink */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.terminal-cursor {
+  display: inline-block;
+  width: 8px;
+  height: 14px;
+  background-color: #00ff41;
+  vertical-align: middle;
+  animation: blink 1s step-start infinite;
+}
+
+/* Custom Cyber Terminal Scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: #050505;
+  border-left: 1px solid rgba(0, 255, 65, 0.15);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #00ff41;
+  box-shadow: 0 0 5px rgba(0, 255, 65, 0.6);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #03a9f4;
+}
+
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
-}
-
-/* Manga Speech Bubble Tails */
-.speech-bubble-left {
-  position: relative;
-}
-.speech-bubble-left::after {
-  content: "";
-  position: absolute;
-  bottom: -10px;
-  left: 20px;
-  width: 16px;
-  height: 16px;
-  background: inherit;
-  border-right: 3px solid #111111;
-  border-bottom: 3px solid #111111;
-  transform: rotate(45deg);
-}
-
-.speech-bubble-right {
-  position: relative;
-}
-.speech-bubble-right::after {
-  content: "";
-  position: absolute;
-  bottom: -10px;
-  right: 20px;
-  width: 16px;
-  height: 16px;
-  background: inherit;
-  border-right: 3px solid #111111;
-  border-bottom: 3px solid #111111;
-  transform: rotate(45deg);
 }
