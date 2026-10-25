@@ -6,11 +6,11 @@ import { useLanguage } from "@/utils/translations";
 import VacancyCard, { type VacancyItem } from "@/components/VacancyCard";
 import { Terminal, RefreshCw, ChevronDown, Filter, Zap } from "lucide-react";
 
-const FILTER_KEYS = ["all", "frontend", "backend", "noExp"] as const;
+const FILTER_KEYS = ["all", "match", "frontend", "backend", "noExp"] as const;
 type FilterKey = (typeof FILTER_KEYS)[number];
 
 export default function VacanciesPage() {
-  const { user } = useTelegram();
+  const { user, dbUser } = useTelegram();
   const { t, lang } = useLanguage();
   const isUz = lang === "uz";
 
@@ -102,6 +102,12 @@ export default function VacanciesPage() {
 
   useEffect(() => {
     loadVacancies(1, false);
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("filter") === "match") {
+        setActiveFilter("match");
+      }
+    }
   }, [loadVacancies]);
 
   const handleLoadMore = () => {
@@ -112,6 +118,8 @@ export default function VacanciesPage() {
 
   const getFilterLabel = (key: FilterKey) => {
     switch (key) {
+      case "match":
+        return isUz ? "MOS KELUVCHI" : "ПОД МОИ НАВЫКИ";
       case "frontend":
         return "FRONTEND";
       case "backend":
@@ -128,6 +136,14 @@ export default function VacanciesPage() {
     if (activeFilter === "all") return true;
 
     const haystack = `${vacancy.title} ${(vacancy.tags || []).join(" ")}`.toLowerCase();
+
+    if (activeFilter === "match") {
+      const userSkills = (dbUser?.skills || []).map((s) => s.toLowerCase());
+      if (userSkills.length === 0) return true;
+      return userSkills.some(
+        (skill) => haystack.includes(skill) || (vacancy.tags || []).some((t) => t.toLowerCase().includes(skill))
+      );
+    }
 
     if (activeFilter === "frontend") {
       return /frontend|фронтенд|react|next\.?js|vue|angular|typescript|javascript|верст|ui/i.test(

@@ -31,6 +31,7 @@ export interface TelegramWebApp {
   ready: () => void;
   expand: () => void;
   close: () => void;
+  openLink?: (url: string, options?: { try_instant_view?: boolean }) => void;
   isExpanded?: boolean;
   platform?: string;
 }

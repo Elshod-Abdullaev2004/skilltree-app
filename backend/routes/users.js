@@ -126,6 +126,9 @@ router.put("/profile", telegramAuth, async (req, res) => {
       if (typeof level === "number") {
         user.level = level;
       }
+      if (typeof req.body.notificationsEnabled === "boolean") {
+        user.notificationsEnabled = req.body.notificationsEnabled;
+      }
       if (req.body.language === "ru" || req.body.language === "uz") {
         user.language = req.body.language;
       }
@@ -180,8 +183,7 @@ router.post("/", async (req, res) => {
 
     if (existingUser) {
       if (username !== undefined) existingUser.username = username;
-      // ВАЖНО: сохраняем выбор языка из Telegram-бота, если он уже установлен в БД!
-      if (!existingUser.language && (language === "ru" || language === "uz")) {
+      if (language === "ru" || language === "uz") {
         existingUser.language = language;
       }
       if (rank !== undefined) existingUser.rank = rank;

@@ -5,6 +5,8 @@ import { useTelegram } from "@/hooks/useTelegram";
 import { useLanguage } from "@/utils/translations";
 import { trackEvent } from "@/utils/analytics";
 import QuizModal, { type QuizQuestion } from "@/components/QuizModal";
+import Link from "next/link";
+import { showToast } from "@/utils/toast";
 import {
   Award,
   Bell,
@@ -15,6 +17,8 @@ import {
   ArrowDown,
   Cpu,
   Terminal,
+  Briefcase,
+  ChevronRight,
 } from "lucide-react";
 
 export type SkillKey =
@@ -81,8 +85,52 @@ export default function TreePage() {
       setLearnedSkills(loadedSkills);
       setLevel(computedLevel);
       broadcastLevelUpdate(computedLevel, loadedSkills);
+      if (typeof dbUser.notificationsEnabled === "boolean") {
+        setTgNotifications(dbUser.notificationsEnabled);
+      }
     }
   }, [dbUser]);
+
+  const handleToggleNotifications = async () => {
+    const nextVal = !tgNotifications;
+    setTgNotifications(nextVal);
+
+    try {
+      const res = await fetch(`${apiUrl}/api/users/profile`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...(initData
+            ? {
+                Authorization: `Bearer ${initData}`,
+                "x-telegram-init-data": initData,
+              }
+            : { "x-guest-mode": "true" }),
+        },
+        body: JSON.stringify({
+          telegramId,
+          notificationsEnabled: nextVal,
+        }),
+      });
+
+      if (res.ok) {
+        setDbUser((prev) =>
+          prev ? { ...prev, notificationsEnabled: nextVal } : null
+        );
+        showToast(
+          nextVal
+            ? isUz
+              ? "Bildirishnomalar faollashtirildi! [DISPATCH: ON]"
+              : "Уведомления активированы! [DISPATCH: ON]"
+            : isUz
+              ? "Bildirishnomalar o'chirildi. [DISPATCH: MUTED]"
+              : "Уведомления отключены. [DISPATCH: MUTED]"
+        );
+      }
+    } catch (err) {
+      console.warn("Ошибка сохранения уведомлений:", err);
+    }
+  };
 
   const handleSkillCardClick = (skillName: SkillKey) => {
     trackEvent("skill_clicked", {
@@ -396,7 +444,7 @@ export default function TreePage() {
             type="button"
             role="switch"
             aria-checked={tgNotifications}
-            onClick={() => setTgNotifications((prev) => !prev)}
+            onClick={handleToggleNotifications}
             className={`px-3 py-1 text-[10px] font-bold border transition-all rounded-none cursor-pointer ${
               tgNotifications
                 ? "bg-cyber-green text-cyber-black border-cyber-green shadow-cyber-glow"
@@ -406,6 +454,24 @@ export default function TreePage() {
             {tgNotifications ? "[ACTIVE]" : "[MUTED]"}
           </button>
         </div>
+      </section>
+
+      {/* Продуктовый мост в Ленту Вакансий (Замыкание воронки на North Star Metric) */}
+      <section className="pt-1 pb-4">
+        <Link
+          href="/?filter=match"
+          className="w-full py-3 px-4 bg-cyber-black text-cyber-green border border-cyber-green hover:bg-cyber-green hover:text-cyber-black font-bold text-xs uppercase tracking-widest flex items-center justify-between transition-all cursor-pointer rounded-none cyber-glow"
+        >
+          <span className="flex items-center gap-2">
+            <Briefcase className="w-4 h-4" />
+            <span>
+              {isUz
+                ? "> KO'NIKMALARGA MOS VAKANSIYALAR [MATCH FEED]"
+                : "> ВАКАНСИИ ПОД ОТКРЫТЫЕ НАВЫКИ [MATCH FEED]"}
+            </span>
+          </span>
+          <ChevronRight className="w-4 h-4 stroke-[2.5]" />
+        </Link>
       </section>
     </div>
   );

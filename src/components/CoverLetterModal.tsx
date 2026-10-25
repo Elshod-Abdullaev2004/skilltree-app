@@ -358,7 +358,13 @@ ${dbUser?.github_url ? `💻 GitHub с примерами: ${dbUser.github_url}\
 
     setTimeout(() => {
       if (typeof window !== "undefined") {
-        window.open(directUrl, "_blank");
+        if (directUrl && directUrl !== "#") {
+          if (window.Telegram?.WebApp?.openLink) {
+            window.Telegram.WebApp.openLink(directUrl);
+          } else {
+            window.open(directUrl, "_blank");
+          }
+        }
       }
       onClose();
     }, 400);

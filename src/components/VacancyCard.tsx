@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Building2, Terminal, Flame, MapPin, ChevronRight } from "lucide-react";
 import { useLanguage } from "@/utils/translations";
+import { useTelegram } from "@/context/TelegramProvider";
 import { trackEvent } from "@/utils/analytics";
 import CoverLetterModal from "@/components/CoverLetterModal";
 
@@ -26,7 +27,10 @@ interface VacancyCardProps {
 
 export default function VacancyCard({ vacancy, index = 0 }: VacancyCardProps) {
   const { t, lang } = useLanguage();
+  const { dbUser } = useTelegram();
   const isUz = lang === "uz";
+
+  const userSkills = (dbUser?.skills || []).map((s) => s.toLowerCase());
 
   const isNoExperience =
     vacancy.tags?.some((tag) =>
@@ -137,14 +141,23 @@ export default function VacancyCard({ vacancy, index = 0 }: VacancyCardProps) {
         {/* Теги технологий */}
         {Array.isArray(vacancy.tags) && vacancy.tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5 pt-0.5">
-            {vacancy.tags.map((tag) => (
-              <span
-                key={tag}
-                className="px-2 py-0.5 text-[10px] font-mono bg-cyber-black text-zinc-300 border border-zinc-800 uppercase"
-              >
-                [{tag}]
-              </span>
-            ))}
+            {vacancy.tags.map((tag) => {
+              const isMatch = userSkills.some((s) =>
+                tag.toLowerCase().includes(s) || s.includes(tag.toLowerCase())
+              );
+              return (
+                <span
+                  key={tag}
+                  className={`px-2 py-0.5 text-[10px] font-mono uppercase border ${
+                    isMatch
+                      ? "bg-cyber-dark text-cyber-green border-cyber-green shadow-cyber-glow"
+                      : "bg-cyber-black text-zinc-300 border-zinc-800"
+                  }`}
+                >
+                  [{tag}{isMatch ? " ✓" : ""}]
+                </span>
+              );
+            })}
           </div>
         )}
 
