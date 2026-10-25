@@ -18,7 +18,7 @@ function generateFallbackCoverLetter({
   skills,
   isUz,
   testScore,
-  testTotal = 5,
+  testTotal = 15,
 }) {
   const stack =
     skills && skills.length > 0
@@ -26,10 +26,10 @@ function generateFallbackCoverLetter({
       : "HTML5, CSS3, JavaScript, React, Next.js";
 
   const testMention =
-    typeof testScore === "number" && testScore >= 3
+    typeof testScore === "number" && testScore >= 12
       ? isUz
-        ? `Men ushbu vakansiya bo'yicha kirish ekspress-intervyusidan muvaffaqiyatli o'tib, ${testScore}/${testTotal} ball to'pladim va amaliy bilimlarimni tasdiqladim.\n\n`
-        : `Я успешно прошел входное экспресс-интервью под требования этой вакансии с результатом ${testScore} из ${testTotal} баллов, подтвердив знание профильного стека.\n\n`
+        ? `Men ushbu vakansiya bo'yicha chuqur texnik intervyudan muvaffaqiyatli o'tib, ${testScore}/${testTotal} ball (80%+ dan yuqori) to'pladim va amaliy bilimlarim hamda arxitekturani tushunishimni to'liq tasdiqladim.\n\n`
+        : `Я успешно прошел углубленное техническое собеседование под требования этой вакансии с результатом ${testScore} из ${testTotal} баллов (более 80%), подтвердив фундаментальную базу и готовность к боевым задачам.\n\n`
       : "";
 
   if (isUz) {
@@ -58,7 +58,7 @@ ${github_url ? `💻 GitHub с примерами кода: ${github_url}\n` : "
 }
 
 /**
- * Валидация и парсинг 5 вопросов мини-интервью от Gemini
+ * Валидация и парсинг вопросов технического собеседования от Gemini
  */
 function parseAndValidateInterviewQuestions(rawText) {
   if (!rawText || typeof rawText !== "string") {
@@ -97,7 +97,7 @@ function parseAndValidateInterviewQuestions(rawText) {
         question: String(item.question).trim(),
         options: item.options.map((opt) => String(opt).trim()),
         correctAnswerIndex: Math.floor(item.correctAnswerIndex),
-        skill: String(item.skill || item.technology || "Frontend").trim(),
+        skill: String(item.skill || item.technology || "Fullstack").trim(),
       });
     }
   }
@@ -110,191 +110,359 @@ function parseAndValidateInterviewQuestions(rawText) {
 }
 
 /**
- * Резервный генератор 5 тестовых вопросов под стек вакансии
+ * Резервный пул 15 глубоких и сложных вопросов технического собеседования
+ * Проверяют: фундаментальную базу, архитектуру, поиск ошибок в коде и ситуативные задачи
  */
 function generateFallbackInterviewQuestions(title = "", description = "", isUz = false) {
-  const text = `${title} ${description}`.toLowerCase();
-  const isReact = /react|next|redux|hooks/i.test(text);
-
   if (isUz) {
-    if (isReact) {
-      return [
-        {
-          question: "React-da komponent qayta renderlanganda qimmat hisob-kitoblarni keshlashtirish uchun qaysi hook ishlatiladi?",
-          options: ["useMemo", "useCallback", "useEffect", "useRef"],
-          correctAnswerIndex: 0,
-          skill: "React",
-        },
-        {
-          question: "React-da Virtual DOM nima maqsadda qo'llaniladi?",
-          options: [
-            "Faqat server bilan ulanish uchun",
-            "Haqiqiy DOM-ga o'zgarishlarni minimal qilib, unumdorlikni oshirish uchun",
-            "Ma'lumotlar bazasini boshqarish uchun",
-            "CSS uslublarini kompilyatsiya qilish uchun",
-          ],
-          correctAnswerIndex: 1,
-          skill: "React",
-        },
-        {
-          question: "Next.js App Router-da standart holatda barcha komponentlar qanday bo'ladi?",
-          options: ["Client Components", "Server Components", "Static HTML", "Pure Functions"],
-          correctAnswerIndex: 1,
-          skill: "Next.js",
-        },
-        {
-          question: "JavaScript-da Promise.all() qanday vaziyatda reject bo'ladi?",
-          options: [
-            "Agar barcha promiselar reject bo'lsa",
-            "Agar kamida bitta promise reject bo'lsa",
-            "U hech qachon reject bo'lmaydi",
-            "Faqat tarmoq uzilsa",
-          ],
-          correctAnswerIndex: 1,
-          skill: "JavaScript",
-        },
-        {
-          question: "Git-da mavjud o'zgarishlarni bekor qilmasdan vaqtincha saqlab turish uchun qaysi buyruq ishlatiladi?",
-          options: ["git reset", "git stash", "git checkout", "git clean"],
-          correctAnswerIndex: 1,
-          skill: "Git",
-        },
-      ];
-    }
-
     return [
       {
-        question: "JavaScript-da '==' va '===' operatorlari o'rtasidagi asosiy farq nima?",
+        question: "JavaScript Event Loop-da Microtask (Promise, queueMicrotask) va Macrotask (setTimeout) qanday tartibda bajariladi?",
         options: [
-          "'===' tiplarni keltirmasdan qat'iy tekshiradi",
-          "'==' faqat sonlarni tekshiradi",
-          "'===' faqat obyektlar uchun ishlatiladi",
-          "Hech qanday farqi yo'q",
+          "Barcha macrotasklar bajarilgandan keyin microtasklar ishga tushadi",
+          "Har bir macrotask tugagach, microtask navbatidagi barcha vazifalar to'liq bo'shatiladi",
+          "Ular parallel ravishda turli oqimlarda (threads) bir vaqtda ishlaydi",
+          "Faqat bitta microtask bajariladi, qolgani keyingi renderga qoldiriladi"
+        ],
+        correctAnswerIndex: 1,
+        skill: "JavaScript Fundamentals"
+      },
+      {
+        question: "Quyidagi kod natijasi nima bo'ladi: console.log(typeof null, null instanceof Object, NaN === NaN)?",
+        options: [
+          "'object', false, false",
+          "'null', false, true",
+          "'object', true, false",
+          "'undefined', false, false"
         ],
         correctAnswerIndex: 0,
-        skill: "JavaScript",
+        skill: "JavaScript Core"
       },
       {
-        question: "CSS Flexbox-da elementlarni asosiy o'q bo'ylab markazlashtirish uchun nima yoziladi?",
-        options: ["align-items: center", "justify-content: center", "align-content: center", "text-align: center"],
+        question: "React-da to'g'ridan-to'g'ri state-ni o'zgartirish (masalan: state.items.push(newItem)) nima sababdan jiddiy xato hisoblanadi?",
+        options: [
+          "JavaScript xatolik chiqarib dasturni to'xtatadi",
+          "Obyekt havolasi (reference) o'zgarmagani uchun React qayta render qilmaydi va PureComponent/memo buziladi",
+          "Barcha boshqa komponentlarning ma'lumotlari o'chib ketadi",
+          "Faqat TypeScript-da xato beradi, JavaScript-da to'g'ri ishlaydi"
+        ],
         correctAnswerIndex: 1,
-        skill: "CSS",
+        skill: "React Architecture"
       },
       {
-        question: "HTML5-da asosiy noyob kontent uchun qaysi semantik teg mo'ljallangan?",
-        options: ["<article>", "<section>", "<main>", "<content>"],
-        correctAnswerIndex: 2,
-        skill: "HTML",
-      },
-      {
-        question: "JavaScript Event Loop-da Microtask navbatiga nima qo'shiladi?",
-        options: ["setTimeout", "Promise callbacks (.then)", "setInterval", "DOM Events"],
+        question: "React-da ro'yxatlarni chizishda 'key' sifatida massiv indeksini (index) ishlatish qachon jiddiy muammoga olib keladi?",
+        options: [
+          "Faqat ro'yxat 100 tadan ortiq bo'lsa",
+          "Elementlar filtrlangan, o'chirilgan yoki ularning tartibi o'zgarganda ichki state noto'g'ri elementlarga bog'lanib qoladi",
+          "Brauzerda xotira to'lib ketishiga (memory leak) olib keladi",
+          "Indeks ishlatish har doim tavsiya etiladi, hech qanday muammo yo'q"
+        ],
         correctAnswerIndex: 1,
-        skill: "JavaScript",
+        skill: "React Reconciliation"
       },
       {
-        question: "REST API-da mavjud resurs ma'lumotlarini qisman yangilash uchun qaysi HTTP metod qo'llaniladi?",
-        options: ["PUT", "PATCH", "POST", "UPDATE"],
+        question: "Quyidagi kodda xatolik nimada: for (var i = 0; i < 3; i++) { setTimeout(() => console.log(i), 100); }?",
+        options: [
+          "Sintaksis xatosi bor, kod ishlamaydi",
+          "var funksiya ko'lamiga (function scope) ega bo'lgani uchun barcha taymerlar 3 chiqarguncha bir xil qiymatni oladi (let ishlatish kerak)",
+          "setTimeout ichida console.log chaqirib bo'lmaydi",
+          "Kod 0, 1, 2 ni to'g'ri chiqaradi"
+        ],
         correctAnswerIndex: 1,
-        skill: "REST API",
+        skill: "Code Debugging"
       },
+      {
+        question: "React komponentida quyidagi holatda nima sodir bo'ladi: setCount(count + 1); setCount(count + 1);?",
+        options: [
+          "count qiymati 2 ga oshadi",
+          "Ikkala chaqiruv ham joriy renderdagi bir xil count qiymatidan foydalangani uchun count faqat 1 ga oshadi (batching)",
+          "Cheksiz render sikli (infinite loop) yuzaga keladi",
+          "React xatolik tashlaydi"
+        ],
+        correctAnswerIndex: 1,
+        skill: "State Management"
+      },
+      {
+        question: "useEffect ichida tarmoq so'rovi (fetch) yuborilganda xotira sizib chiqishi (memory leak) va race condition oldini olish uchun nima qilish kerak?",
+        options: [
+          "useEffect-dan butunlay voz kechish",
+          "Cleanup funksiyasida AbortController.abort() orqali so'rovni bekor qilish",
+          "Har doim async/await-ni to'g'ridan-to'g'ri useEffect argumentida chaqirish",
+          "Brauzer keshini tozalash"
+        ],
+        correctAnswerIndex: 1,
+        skill: "React Lifecycle"
+      },
+      {
+        question: "Next.js App Router-da Server Component-dan Client Component-ga props uzatishda qanday cheklov mavjud?",
+        options: [
+          "Faqat raqamlarni uzatish mumkin",
+          "Props seriyalashtiriladigan (serializable, masalan JSON) bo'lishi kerak, funksiyalar va class nusxalarini to'g'ridan-to'g'ri uzatib bo'lmaydi",
+          "Props uzatish umuman mumkin emas",
+          "Faqat Redux orqali uzatish kerak"
+        ],
+        correctAnswerIndex: 1,
+        skill: "Next.js Architecture"
+      },
+      {
+        question: "Next.js-da 'Hydration Mismatch' xatosi nima sababdan yuzaga keladi?",
+        options: [
+          "Faqat CSS fayli yuklanmaganda",
+          "Serverda yaratilgan boshlang'ich HTML va mijoz brauzerida dastlabki render qilingan DOM o'rtasida farq bo'lsa (masalan, typeof window)",
+          "Faqat ma'lumotlar bazasi o'chib qolganda",
+          "Brauzer eskirgan bo'lsa"
+        ],
+        correctAnswerIndex: 1,
+        skill: "SSR & Hydration"
+      },
+      {
+        question: "Sahifada 10 000 ta murakkab elementdan iborat ro'yxatni brauzer qotib qolmasdan (laglarsiz) ko'rsatish uchun qaysi texnika zarur?",
+        options: [
+          "Barcha elementlarni darhol DOM-ga joylash va display: none qilish",
+          "Virtualizatsiya (Virtualization / Windowing): faqat ekranda ko'rinib turgan elementlarni render qilish",
+          "Elementlarni base64 formatiga o'tkazish",
+          "setInterval orqali sekundiga 1 tadan render qilish"
+        ],
+        correctAnswerIndex: 1,
+        skill: "Performance Optimization"
+      },
+      {
+        question: "CSS-da z-index: 99999 berilgan element nima sababdan z-index: 1 bo'lgan element ostida qolib ketishi mumkin?",
+        options: [
+          "z-index faqat 100 gacha sonlarni qo'llab-quvvatlaydi",
+          "Element opacity < 1, transform yoki filter sababli yangi Stacking Context (qatlamlar konteksti) ichida qolgan",
+          "CSS keshlanib qolgan",
+          "Faqat display: flex ishlatilganda z-index ishlamaydi"
+        ],
+        correctAnswerIndex: 1,
+        skill: "CSS Stacking Context"
+      },
+      {
+        question: "CORS xatoligida brauzer yuboradigan 'Preflight request' qaysi HTTP metodidan foydalanadi va nima maqsadda yuboriladi?",
+        options: [
+          "HEAD metodi, fayl hajmini bilish uchun",
+          "OPTIONS metodi, server ruxsat bergan metodlar va sarlavhalarni (headers) tekshirish uchun",
+          "GET metodi, token olish uchun",
+          "POST metodi, ma'lumotlarni tekshirish uchun"
+        ],
+        correctAnswerIndex: 1,
+        skill: "Network & Security"
+      },
+      {
+        question: "XSS (Cross-Site Scripting) hujumlaridan himoyalanish uchun React qanday standart mexanizmdan foydalanadi?",
+        options: [
+          "Barcha ma'lumotlarni shifrlaydi",
+          "JSX ichidagi qiymatlarni avtomatik stringga aylantirib ekranlashtiradi (escaping) va dangerouslySetInnerHTML-siz xavfli scriptlarni bajarmaydi",
+          "Tarmoqni uzib qo'yadi",
+          "Faqat HTTPS orqali so'rov yuborishga ruxsat beradi"
+        ],
+        correctAnswerIndex: 1,
+        skill: "Web Security"
+      },
+      {
+        question: "Git-da 'git merge' va 'git rebase' o'rtasidagi asosiy farq nima?",
+        options: [
+          "Farqi yo'q, ikkalasi ham bir xil ishlaydi",
+          "Merge alohida merge-commit yaratib tarixni saqlaydi, rebase esa joriy commitlarni maqsadli tarmoq ustiga qayta yozib to'g'ri chiziqli tarix hosil qiladi",
+          "Rebase barcha fayllarni o'chirib tashlaydi",
+          "Merge faqat lokal ishlaydi, rebase esa faqat serverda"
+        ],
+        correctAnswerIndex: 1,
+        skill: "Git & Collaboration"
+      },
+      {
+        question: "SPA (Single Page Application) da xotira sizib chiqishining (Memory Leak) eng keng tarqalgan sababi nima?",
+        options: [
+          "CSS fayllarining kattaligi",
+          "Komponent unmount bo'lganda window/document-ga qo'shilgan event listenerlar, interval yoki websocketlarni tozalamaslik",
+          "O'zgaruvchilarga const ishlatish",
+          "JSON.stringify dan ko'p foydalanish"
+        ],
+        correctAnswerIndex: 1,
+        skill: "Architecture & Memory"
+      }
     ];
   }
 
-  // Russian
-  if (isReact) {
-    return [
-      {
-        question: "Какой хук в React используется для мемоизации результата сложных вычислений между рендерами?",
-        options: ["useMemo", "useCallback", "useRef", "useEffect"],
-        correctAnswerIndex: 0,
-        skill: "React",
-      },
-      {
-        question: "В чем главное преимущество Virtual DOM в современных веб-приложениях?",
-        options: [
-          "Позволяет запускать код без JavaScript",
-          "Минимизирует дорогостоящие прямые операции перерисовки в реальном DOM",
-          "Автоматически шифрует данные пользователя",
-          "Заменяет HTTP-запросы к серверу",
-        ],
-        correctAnswerIndex: 1,
-        skill: "React",
-      },
-      {
-        question: "Какими по умолчанию являются компоненты внутри папки app в Next.js (App Router)?",
-        options: ["Client Components", "React Server Components", "Static Microtasks", "Pure Reducers"],
-        correctAnswerIndex: 1,
-        skill: "Next.js",
-      },
-      {
-        question: "Когда промис, возвращенный Promise.all(), переходит в состояние rejected?",
-        options: [
-          "Только если все переданные промисы отклонены",
-          "Как только хотя бы один из переданных промисов завершился с ошибкой",
-          "Только по истечении таймаута",
-          "Он никогда не переходит в rejected",
-        ],
-        correctAnswerIndex: 1,
-        skill: "JavaScript",
-      },
-      {
-        question: "Какая команда Git временно сохраняет незакоммиченные локальные изменения в стек?",
-        options: ["git reset --soft", "git stash", "git checkout -b", "git revert"],
-        correctAnswerIndex: 1,
-        skill: "Git",
-      },
-    ];
-  }
-
+  // Russian fallback: 15 глубоких и сложных вопросов
   return [
     {
-      question: "В чем ключевое отличие оператора строгого равенства (===) от нестрогого (==) в JavaScript?",
+      question: "В каком порядке Event Loop в браузере выполняет Microtasks (Promise, queueMicrotask) и Macrotasks (setTimeout, setInterval)?",
       options: [
-        "=== сравнивает значения без неявного приведения типов",
-        "== работает только с числами",
-        "=== работает только с объектами",
-        "Разницы нет, это синонимы",
+        "Сначала выполняются все макрозадачи, а микрозадачи — только перед закрытием страницы",
+        "После выполнения текущей макрозадачи очередь микрозадач вычищается полностью до перехода к следующей макрозадаче или рендеру",
+        "Микрозадачи и макрозадачи выполняются параллельно в разных потоках CPU",
+        "Выполняется строго по одной микрозадаче на каждые пять макрозадач"
+      ],
+      correctAnswerIndex: 1,
+      skill: "JavaScript Fundamentals"
+    },
+    {
+      question: "Что выведет код: console.log(typeof null, null instanceof Object, NaN === NaN)?",
+      options: [
+        "'object', false, false",
+        "'null', false, true",
+        "'object', true, false",
+        "'undefined', false, false"
       ],
       correctAnswerIndex: 0,
-      skill: "JavaScript",
+      skill: "JavaScript Core"
     },
     {
-      question: "Какое свойство CSS выравнивает flex-элементы вдоль главной оси контейнера?",
-      options: ["align-items", "justify-content", "align-content", "place-items"],
+      question: "Почему прямая мутация состояния в React (например, state.list.push(item)) считается критической ошибкой?",
+      options: [
+        "JavaScript аварийно завершит выполнение скрипта",
+        "Ссылка на объект не изменяется, поэтому поверхностное сравнение (shallow compare) в React и memo не зафиксирует изменений и пропустит рендер",
+        "Это приведет к удалению всех соседних компонентов",
+        "Это ошибка только в TypeScript, в чистом JavaScript это рекомендуемый паттерн"
+      ],
       correctAnswerIndex: 1,
-      skill: "CSS",
+      skill: "React Architecture"
     },
     {
-      question: "Какой семантический тег HTML5 предназначен для основного уникального содержимого страницы?",
-      options: ["<section>", "<article>", "<main>", "<div>"],
-      correctAnswerIndex: 2,
-      skill: "HTML",
-    },
-    {
-      question: "Что из перечисленного попадает в очередь микрозадач (Microtask Queue) в Event Loop браузера?",
-      options: ["Коллбэки setTimeout", "Коллбэки Promise (.then/.catch)", "Коллбэки setInterval", "События клика мыши"],
+      question: "К какому багу приводит использование индекса массива (index) в качестве свойства key при рендере динамического списка?",
+      options: [
+        "Падению браузера из-за переполнения стека",
+        "При удалении, фильтрации или сортировке элементов внутреннее состояние (uncontrolled inputs, state) будет привязано к неверным DOM-узлам",
+        "Ошибке валидации HTML5 в браузере",
+        "К замедлению компиляции Next.js"
+      ],
       correctAnswerIndex: 1,
-      skill: "JavaScript",
+      skill: "React Reconciliation"
     },
     {
-      question: "Какой HTTP-метод по стандарту REST предназначен для частичного обновления полей ресурса?",
-      options: ["PUT", "PATCH", "POST", "UPDATE"],
+      question: "Найдите ошибку в коде: for (var i = 0; i < 3; i++) { setTimeout(() => console.log(i), 50); }. Что выведется и почему?",
+      options: [
+        "Выведется 0, 1, 2, так как setTimeout всегда сохраняет замыкание переменной",
+        "Выведется 3, 3, 3, так как var имеет функциональную область видимости, и все коллбэки захватывают одну и ту же мутированную переменную (нужен let)",
+        "Код выбросит ReferenceError",
+        "Таймеры не сработают без указания третьего аргумента"
+      ],
       correctAnswerIndex: 1,
-      skill: "REST API",
+      skill: "Code Debugging"
     },
+    {
+      question: "В функциональном компоненте React вызвано: setCount(count + 1); setCount(count + 1);. На сколько увеличится count в следующем рендере?",
+      options: [
+        "На 2, так как функция вызвана дважды",
+        "На 1, так как оба вызова используют одно и то же значение count из текущего замыкания рендера (для аккумуляции нужен functional update: prev => prev + 1)",
+        "Произойдет бесконечный цикл рендеров",
+        "React выбросит исключение в Strict Mode"
+      ],
+      correctAnswerIndex: 1,
+      skill: "State Management"
+    },
+    {
+      question: "Как в хуке useEffect корректно предотвратить race condition и утечку памяти при выполнении асинхронного fetch-запроса?",
+      options: [
+        "Использовать синхронный XMLHttpRequest",
+        "В cleanup-функции хука вызвать abort() у экземпляра AbortController (или использовать флаг отмены)",
+        "Сделать сам коллбэк useEffect асинхронной функцией async () => {}",
+        "Удалить зависимости из массива dependencies"
+      ],
+      correctAnswerIndex: 1,
+      skill: "React Lifecycle"
+    },
+    {
+      question: "Какое строгое ограничение накладывает передача props от Server Component к Client Component в Next.js (App Router)?",
+      options: [
+        "Можно передавать только примитивы типа number и boolean",
+        "Props должны быть сериализуемыми (например, JSON-совместимыми); нельзя передавать функции, классы и несериализуемые дескрипторы",
+        "Передавать props между серверными и клиентскими компонентами запрещено",
+        "Передача возможна только через глобальный store Redux"
+      ],
+      correctAnswerIndex: 1,
+      skill: "Next.js Architecture"
+    },
+    {
+      question: "Из-за чего в приложениях на Next.js / SSR возникает ошибка 'Hydration Mismatch' (Text content did not match)?",
+      options: [
+        "Из-за отсутствия favicon на сервере",
+        "Начальный HTML, сгенерированный сервером, не совпадает с первым деревом рендера на клиенте (например, использование window, Date.now() или Math.random() до монтирования)",
+        "Из-за сбоя в базе данных PostgreSQL",
+        "Из-за отключенного JavaScript в браузере"
+      ],
+      correctAnswerIndex: 1,
+      skill: "SSR & Hydration"
+    },
+    {
+      question: "Какая архитектурная техника позволяет плавно отображать список из 20 000 сложных карточек товаров без зависания DOM?",
+      options: [
+        "Отрендерить все 20 000 элементов и скрыть их через display: none",
+        "Виртуализация списков (Windowing / Virtual List), когда в реальном DOM отрисовываются только элементы, видимые в текущем viewport",
+        "Перевод всех карточек в формат SVG",
+        "Рендер элементов через setTimeout с задержкой 1 мс"
+      ],
+      correctAnswerIndex: 1,
+      skill: "Performance Optimization"
+    },
+    {
+      question: "Почему элемент с CSS-свойством z-index: 99999 может отображаться ПОД элементом с z-index: 1?",
+      options: [
+        "z-index ограничен максимальным значением 10 000",
+        "Элемент находится внутри родителя, создавшего изолированный Stacking Context (например, через opacity < 1, transform, filter или contain)",
+        "В браузере включен темный режим",
+        "Свойство z-index работает только в сочетании с display: table"
+      ],
+      correctAnswerIndex: 1,
+      skill: "CSS Stacking Context"
+    },
+    {
+      question: "Какой HTTP-метод браузер отправляет в качестве Preflight-запроса при сложном кросс-доменном CORS-запросе и зачем?",
+      options: [
+        "HEAD для проверки времени ответа сервера",
+        "OPTIONS для проверки разрешенных методов, заголовков и источника (Origin) на стороне сервера перед отправкой основного запроса",
+        "GET для предварительного прогрева DNS",
+        "POST с пустым телом для авторизации"
+      ],
+      correctAnswerIndex: 1,
+      skill: "Network & Security"
+    },
+    {
+      question: "Как React по умолчанию защищает приложения от классических атак Cross-Site Scripting (XSS)?",
+      options: [
+        "Автоматически шифрует трафик с помощью RSA-2048",
+        "Автоматически экранирует (escapes) любые строки, вставляемые в JSX-выражения, предотвращая инъекцию исполняемых скриптов (если не используется dangerouslySetInnerHTML)",
+        "Блокирует доступ ко всем внешним API",
+        "Запрещает использовать форму <input>"
+      ],
+      correctAnswerIndex: 1,
+      skill: "Web Security"
+    },
+    {
+      question: "В чем ключевое практическое отличие между git merge и git rebase при интеграции изменений из ветки feature в main?",
+      options: [
+        "Разницы нет, git rebase — устаревший алиас для merge",
+        "Merge создает отдельный коммит слияния и сохраняет точную хронологию веток; rebase переносит коммиты на верхушку целевой ветки, создавая плоскую линейную историю",
+        "Rebase навсегда стирает изменения авторов",
+        "Merge работает только локально, а rebase только на GitHub"
+      ],
+      correctAnswerIndex: 1,
+      skill: "Git & Collaboration"
+    },
+    {
+      question: "Что является наиболее распространенной причиной утечек памяти (Memory Leaks) в Single Page Applications (React/Next.js)?",
+      options: [
+        "Большой объем CSS-стилей в проекте",
+        "Неудаленные обработчики событий (window.addEventListener), активные setInterval или незакрытые WebSocket-соединения после размонтирования компонента",
+        "Использование ключевого слова const вместо let",
+        "Применение console.log на этапе сборки"
+      ],
+      correctAnswerIndex: 1,
+      skill: "Architecture & Memory"
+    }
   ];
 }
 
 /**
  * POST /api/ai/vacancy-interview
- * Генерация 5 проверочных вопросов экспресс-собеседования по конкретной вакансии
+ * Генерация 15 глубоких и сложных вопросов технического собеседования по вакансии
  * Защищен middleware telegramAuth
  */
 router.post("/vacancy-interview", telegramAuth, async (req, res) => {
   try {
     const {
-      vacancyTitle = "Junior Frontend Developer",
+      vacancyTitle = "Junior Developer",
       vacancyDescription = "",
       company = "IT Компания",
       language,
@@ -325,45 +493,54 @@ router.post("/vacancy-interview", telegramAuth, async (req, res) => {
 
     if (apiKey) {
       const prompt = isUz
-        ? `Siz '${company}' kompaniyasida '${vacancyTitle}' lavozimiga texnik intervyu olayotgan qattiqqo'l Senior dasturchisiz.
+        ? `Siz '${company}' kompaniyasida '${vacancyTitle}' lavozimiga texnik intervyu olayotgan qattiqqo'l Senior dasturchi va texlidsiz.
 Quyidagi vakansiya tavsifi va talablarini chuqur tahlil qiling:
 ${vacancyDescription || vacancyTitle}
 
-Ushbu ish beruvchi talab qilayotgan aynan o'sha texnologiyalar va amaliy ko'nikmalarni tekshiruvchi AYNAN 5 ta murakkab, amaliy test savolini tuzing.
-Har bir savolda AYNAN 4 ta javob varianti va 1 ta to'g'ri javob indeksi (0, 1, 2 yoki 3) bo'lsin.
-Har bir savol uchun "skill" maydonida aynan qaysi texnologiya tekshirilayotganini ko'rsating.
+Ushbu ish beruvchi ko'rsatgan texnologiyalar bo'yicha AYNAN 15 ta chuqur va murakkab test savolini tuzing.
+Savollar quyidagilarni o'z ichiga olishi SHART:
+1. Fundamental baza (til va muhitning ishlash tamoyillari).
+2. Tizimli arxitektura va komponentlar aloqasi.
+3. Koddagi xatolarni topish (bug hunting).
+4. Situatsion amaliy keyslar (performance, memory leak, network, xavfsizlik).
 
-Javobni FAQAT va QAT'IY ravishda quyidagi JSON-massiv formatida qaytaring:
+Format talablari:
+- Har bir savolda AYNAN 4 ta javob varianti va 1 ta to'g'ri javob indeksi (0, 1, 2 yoki 3) bo'lsin.
+- Har bir savolda "skill" maydoni bo'lsin.
+- Qat'iy toza JSON massiv qaytaring:
 [
   {
     "question": "Savol matni",
     "options": ["Variant 1", "Variant 2", "Variant 3", "Variant 4"],
     "correctAnswerIndex": 0,
-    "skill": "Texnologiya nomi (masalan: React, JavaScript, CSS, SQL va h.k.)"
+    "skill": "Texnologiya/Mavzu"
   }
 ]
-Qoidalar:
-- Massivda AYNAN 5 ta ob'ekt bo'lsin!
-- FAQAT toza JSON qaytaring, hech qanday markdown (\`\`\`json) va tushuntirish yozmang.`
-        : `Ты — строгий Senior разработчик, проводящий собеседование в компанию '${company}' на позицию '${vacancyTitle}'.
-Внимательно проанализируй текст и требования вакансии:
+Massivda AYNAN 15 ta ob'ekt bo'lishi kerak. Hech qanday markdown (\`\`\`json) va ortiqcha so'z yozmang!`
+        : `Ты — строгий Senior разработчик и техлид, проводящий техническое собеседование в компанию '${company}' на позицию '${vacancyTitle}'.
+Проанализируй текст вакансии:
 ${vacancyDescription || vacancyTitle}
 
-Сгенерируй РОВНО 5 сложных, практических тестовых вопросов (с 4 вариантами ответов, где ровно 1 правильный), которые проверяют именно те технологии и навыки, которые требует этот работодатель.
-Для каждого вопроса обязательно укажи проверяемую технологию/навык в поле "skill".
+Сгенерируй 15 глубоких и сложных вопросов, которые проверяют технологии, указанные работодателем.
+Вопросы должны включать:
+1. Проверку фундаментальной базы (принципы работы языка и рантайма).
+2. Понимание архитектуры и проектирования компонентов.
+3. Поиск ошибок в коде (bug hunting).
+4. Ситуативные задачи (performance, memory leaks, безопасность, edge cases).
 
-Верни ответ СТРОГО в виде валидного JSON-массива из 5 объектов:
+Формат: 4 варианта ответа, 1 правильный.
+Верни строгий JSON-массив из 15 объектов:
 [
   {
-    "question": "Текст практического вопроса",
+    "question": "Текст сложного вопроса",
     "options": ["Вариант 1", "Вариант 2", "Вариант 3", "Вариант 4"],
     "correctAnswerIndex": 0,
-    "skill": "Название технологии (например, React, TypeScript, Git, REST API)"
+    "skill": "Технология/Тема"
   }
 ]
 Правила:
-- В массиве должно быть РОВНО 5 объектов!
-- В options должно быть ровно 4 варианта.
+- В массиве должно быть РОВНО 15 объектов!
+- В options ровно 4 варианта.
 - correctAnswerIndex: число 0, 1, 2 или 3.
 - Верни ТОЛЬКО чистый JSON без markdown (\`\`\`json) и постороннего текста.`;
 
@@ -399,7 +576,7 @@ ${vacancyDescription || vacancyTitle}
             },
             {
               headers: { "Content-Type": "application/json" },
-              timeout: 12000,
+              timeout: 30000,
             }
           );
           const rawOutput =
@@ -413,7 +590,7 @@ ${vacancyDescription || vacancyTitle}
       }
     }
 
-    if (!questions || questions.length < 5) {
+    if (!questions || questions.length < 15) {
       questions = generateFallbackInterviewQuestions(
         vacancyTitle,
         vacancyDescription,
@@ -425,9 +602,9 @@ ${vacancyDescription || vacancyTitle}
       success: true,
       vacancyTitle,
       company,
-      totalQuestions: 5,
-      passingScore: 3,
-      questions: questions.slice(0, 5),
+      totalQuestions: 15,
+      passingScore: 12,
+      questions: questions.slice(0, 15),
     });
   } catch (error) {
     console.error("❌ [VacancyInterview] Ошибка:", error.message);
@@ -441,9 +618,9 @@ ${vacancyDescription || vacancyTitle}
       success: true,
       vacancyTitle: req.body?.vacancyTitle || "Junior Developer",
       company: req.body?.company || "IT Компания",
-      totalQuestions: 5,
-      passingScore: 3,
-      questions: fallback.slice(0, 5),
+      totalQuestions: 15,
+      passingScore: 12,
+      questions: fallback.slice(0, 15),
     });
   }
 });
@@ -461,7 +638,7 @@ router.post("/cover-letter", telegramAuth, async (req, res) => {
       description = "",
       language,
       testScore,
-      testTotal = 5,
+      testTotal = 15,
     } = req.body;
 
     const telegramId =
@@ -470,7 +647,6 @@ router.post("/cover-letter", telegramAuth, async (req, res) => {
       req.body?.telegram_id ||
       "guest_dev";
 
-    // Извлекаем профиль пользователя из MongoDB
     let user = null;
     try {
       user = await User.findOne({ telegramId: String(telegramId) });
@@ -478,12 +654,15 @@ router.post("/cover-letter", telegramAuth, async (req, res) => {
       console.warn("⚠️ [CoverLetter] Ошибка поиска пользователя:", dbErr.message);
     }
 
-    const github_url = user?.github_url || "";
-    const portfolio_url = user?.portfolio_url || "";
-    const about_me = user?.about_me || "";
-    const skills = Array.isArray(user?.skills) ? user.skills : [];
     const resolvedLanguage = language || user?.language || "ru";
     const isUz = resolvedLanguage === "uz";
+
+    const {
+      github_url = "",
+      portfolio_url = "",
+      about_me = "",
+      skills = [],
+    } = user || {};
 
     const apiKey =
       process.env.GEMINI_API_KEY ||
@@ -493,19 +672,19 @@ router.post("/cover-letter", telegramAuth, async (req, res) => {
     let generatedLetter = "";
 
     const testMentionInfo =
-      typeof testScore === "number" && testScore >= 3
+      typeof testScore === "number" && testScore >= 12
         ? isUz
-          ? `- Nomzod aynan ushbu vakansiya bo'yicha kirish texnik ekspress-intervyusidan muvaffaqiyatli o'tib, ${testScore}/${testTotal} ball to'pladi. Buni xatda uning amaliy bilimlari va motivatsiyasi isboti sifatida albatta qisqa ta'kidlang.`
-          : `- Кандидат только что успешно прошел входное экспресс-интервью под эту вакансию с результатом ${testScore} из ${testTotal} баллов. Обязательно органично упомяни в письме, что кандидат уже подтвердил владение требуемыми навыками на экспресс-тестировании к этой позиции.`
+          ? `- Nomzod aynan ushbu vakansiya bo'yicha chuqur texnik intervyudan muvaffaqiyatli o'tib, ${testScore}/${testTotal} ball (80%+ dan yuqori) to'pladi. Buni xatda uning yuqori malakasi, mustahkam bazasi va motivatsiyasi isboti sifatida albatta ta'kidlang.`
+          : `- Кандидат только что успешно прошел боевое углубленное техническое собеседование под эту вакансию с результатом ${testScore} из ${testTotal} баллов (более 80%). Обязательно органично упомяни в письме, что кандидат доказал владение фундаментальной базой и готовность к сложным задачам на техническом фильтре к этой вакансии.`
         : "";
 
     if (apiKey) {
       const prompt = isUz
         ? `Siz tajribali IT karyera maslahatchisisiz.
-Junior dasturchi uchun '${company}' kompaniyasidagi '${title}' vakansiyasiga qisqa (2-3 ta ixcham xatboshi), professional, o'ziga ishongan va rekruterni jalb qiluvchi ajoyib kuzatuv xati (сопроводительное письмо) yozing.
+'${company}' kompaniyasidagi '${title}' vakansiyasiga topshirayotgan nomzod uchun kuchli, professional va e'tiborni tortuvchi Cover Letter (kuzatuv xati) yozing.
 
 Nomzod ma'lumotlari:
-- O'zi haqida: ${about_me || "Veb-dasturlash asoslarini puxta o'rgangan Junior dasturchi"}
+- O'zi haqida: ${about_me || "Karyerasini endi boshlayotgan iqtidorli va g'ayratli Junior dasturchi"}
 - GitHub: ${github_url || "ko'rsatilmagan"}
 - Portfolio: ${portfolio_url || "ko'rsatilmagan"}
 - Ko'nikmalari: ${skills.length > 0 ? skills.join(", ") : "HTML, CSS, JavaScript, React"}
@@ -514,15 +693,15 @@ ${testMentionInfo}
 
 Talablar:
 1. Xat o'zbek tilida bo'lsin.
-2. Qat'iy, ishonchli, samimiy va ortiqcha klishe/suvsiz bo'lsin.
-3. Yo'q tajribani to'qimang.
-4. Xat salomlashishdan boshlansin va suhbatga taklif bilan yakunlansin.
-5. FAQAT tayyor xat matnini qaytaring, hech qanday qo'shimcha tushuntirish va sarlavhalarsiz.`
-        : `Ты опытный IT-карьерный консультант и технический рекрутер.
-Напиши короткое (2-3 емких абзаца), профессиональное, уверенное и цепляющее сопроводительное письмо для джуниор-разработчика на вакансию «${title}» в компанию «${company}».
+2. Qisqa va lo'nda: maksimum 3-4 ta ixcham abzas.
+3. Suv va keraksiz maqtovlardan qoching.
+4. Aniq, samimiy va ish beruvchini qiziqtiradigan ohangda bo'lsin.
+5. Faqat tayyor xat matnini qaytaring, ortiqcha izohlarsiz.`
+        : `Ты — опытный IT-рекрутер и карьерный консультант.
+Напиши короткое, профессиональное и цепляющее сопроводительное письмо (Cover Letter) для отклика на вакансию '${title}' в компанию '${company}'.
 
 Данные кандидата:
-- О себе: ${about_me || "Junior веб-разработчик с хорошей базой и практическими проектами"}
+- О себе: ${about_me || "Мотивированный начинающий разработчик с хорошей базой и желанием быстро расти в сильной команде"}
 - GitHub: ${github_url || "не указан"}
 - Портфолио: ${portfolio_url || "не указано"}
 - Стек технологий: ${skills.length > 0 ? skills.join(", ") : "HTML, CSS, JavaScript, React, Tailwind"}
@@ -531,9 +710,10 @@ ${testMentionInfo}
 
 Требования:
 1. Текст должен быть на русском языке.
-2. Уверенный, без воды, без шаблонных пустых фраз вроде "я ответственный и стрессоустойчивый".
-3. Не придумывай опыт, которого нет. Сделай упор на мотивацию, практические навыки и готовность решать реальные задачи ${company}.
-4. Верни ТОЛЬКО готовый текст сопроводительного письма без мета-комментариев и оформления markdown.`;
+2. Кратко и емко: максимум 3-4 емких абзаца.
+3. Без канцеляризмов, лишней воды и шаблонных фраз.
+4. Стиль: уверенный, мотивированный, ориентированный на решение задач бизнеса.
+5. Верни ТОЛЬКО готовый текст сопроводительного письма, без вводных фраз и пояснений.`;
 
       // Попытка 1: Через SDK @google/genai
       try {
@@ -543,18 +723,14 @@ ${testMentionInfo}
           contents: prompt,
           config: {
             temperature: 0.7,
-            maxOutputTokens: 800,
           },
         });
 
-        if (response.text && response.text.trim().length > 40) {
-          generatedLetter = response.text
-            .replace(/^```[a-z]*\s*/i, "")
-            .replace(/\s*```$/i, "")
-            .trim();
+        if (response.text) {
+          generatedLetter = response.text.trim();
         }
       } catch (sdkErr) {
-        console.warn("⚠️ [CoverLetter SDK] Ошибка SDK Gemini:", sdkErr.message);
+        console.warn("⚠️ [CoverLetter SDK] Ошибка Gemini SDK:", sdkErr.message);
 
         // Попытка 2: Прямой REST-запрос через axios
         try {
@@ -565,30 +741,21 @@ ${testMentionInfo}
               contents: [{ parts: [{ text: prompt }] }],
               generationConfig: {
                 temperature: 0.7,
-                maxOutputTokens: 800,
               },
             },
             {
               headers: { "Content-Type": "application/json" },
-              timeout: 12000,
+              timeout: 15000,
             }
           );
-
-          const candidateText =
-            restRes.data?.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (candidateText && candidateText.trim().length > 40) {
-            generatedLetter = candidateText
-              .replace(/^```[a-z]*\s*/i, "")
-              .replace(/\s*```$/i, "")
-              .trim();
-          }
+          generatedLetter =
+            restRes.data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
         } catch (restErr) {
-          console.warn("⚠️ [CoverLetter REST] Ошибка REST Gemini:", restErr.message);
+          console.warn("⚠️ [CoverLetter REST] Ошибка Gemini REST:", restErr.message);
         }
       }
     }
 
-    // Если нейросеть вернула пустоту или ключ не настроен, используем качественный шаблон
     if (!generatedLetter) {
       generatedLetter = generateFallbackCoverLetter({
         title,
@@ -605,15 +772,31 @@ ${testMentionInfo}
 
     return res.status(200).json({
       success: true,
-      title,
-      company,
       coverLetter: generatedLetter,
+      testScore,
+      testTotal,
+      passingScore: 12,
     });
   } catch (error) {
-    console.error("❌ [CoverLetter] Критическая ошибка генерации:", error.message);
-    return res.status(500).json({
-      error: "Internal Server Error",
-      message: "Не удалось сгенерировать сопроводительное письмо: " + error.message,
+    console.error("❌ [CoverLetter] Ошибка:", error.message);
+    const isUz = req.body?.language === "uz";
+    const fallbackLetter = generateFallbackCoverLetter({
+      title: req.body?.title || "Junior Developer",
+      company: req.body?.company || "IT Компания",
+      about_me: "",
+      github_url: "",
+      portfolio_url: "",
+      skills: [],
+      isUz,
+      testScore: req.body?.testScore,
+      testTotal: req.body?.testTotal || 15,
+    });
+    return res.status(200).json({
+      success: true,
+      coverLetter: fallbackLetter,
+      testScore: req.body?.testScore,
+      testTotal: req.body?.testTotal || 15,
+      passingScore: 12,
     });
   }
 });
