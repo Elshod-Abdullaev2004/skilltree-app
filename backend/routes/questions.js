@@ -850,16 +850,48 @@ function parseAndValidateGemini10Questions(rawText) {
     if (
       item &&
       item.question &&
-      Array.isArray(item.options) &&
-      item.options.length === 4 &&
-      typeof item.correctAnswerIndex === "number" &&
-      item.correctAnswerIndex >= 0 &&
-      item.correctAnswerIndex <= 3
+      item.correct_answer &&
+      Array.isArray(item.incorrect_answers) &&
+      item.incorrect_answers.length >= 3
     ) {
+      const correctAnswer = String(item.correct_answer).trim();
+      let options = [
+        correctAnswer,
+        ...item.incorrect_answers.slice(0, 3).map((a) => String(a).trim()),
+      ];
+      options.sort(() => Math.random() - 0.5);
+      let correctIndex = options.indexOf(correctAnswer);
+      if (correctIndex === -1) correctIndex = 0;
+
       validQuestions.push({
         question: String(item.question).trim(),
-        options: item.options.map((opt) => String(opt).trim()),
-        correctAnswerIndex: Math.floor(item.correctAnswerIndex),
+        options: options,
+        correctIndex: correctIndex,
+        correctAnswerIndex: correctIndex,
+      });
+    } else if (
+      item &&
+      item.question &&
+      Array.isArray(item.options) &&
+      item.options.length === 4
+    ) {
+      const origIndex =
+        typeof item.correctIndex === "number"
+          ? item.correctIndex
+          : typeof item.correctAnswerIndex === "number"
+          ? item.correctAnswerIndex
+          : 0;
+      const correctAnswer = String(item.options[origIndex]).trim();
+      let options = [...item.options.map((opt) => String(opt).trim())];
+      options.sort(() => Math.random() - 0.5);
+      let correctIndex = options.indexOf(correctAnswer);
+      if (correctIndex === -1) correctIndex = 0;
+
+      validQuestions.push({
+        question: String(item.question).trim(),
+        options: options,
+        correctIndex: correctIndex,
+        correctAnswerIndex: correctIndex,
       });
     }
   }
@@ -949,38 +981,34 @@ Javobni FAQAT va QAT'IY ravishda quyidagi JSON-massiv formatida qaytaring:
 [
   {
     "question": "1-savol matni",
-    "options": ["1-variant", "2-variant", "3-variant", "4-variant"],
-    "correctAnswerIndex": 0
-  },
-  ...
+    "correct_answer": "Qisqa to'g'ri javob",
+    "incorrect_answers": ["1-noto'g'ri variant", "2-noto'g'ri variant", "3-noto'g'ri variant"]
+  }
 ]
 
 Qoidalar:
 - Massivda AYNAN 10 ta ob'ekt bo'lishi shart!
-- Har bir ob'ektda "options" massivida AYNAN 4 ta variant bo'lsin.
-- "correctAnswerIndex" to'g'ri javob indeksi (0, 1, 2 yoki 3) bo'lishi shart.
-- Variantlarning 1 tasi to'g'ri, 3 tasi ishonarli noto'g'ri bo'lsin.
-- JUDA MUHIM: Barcha 4 ta javob varianti mutlaqo bir xil hajm va tafsilot darajasida bo'lsin (har biri 10-15 so'zdan oshmasin). To'g'ri javob uzunligi yoki uslubi bilan boshqalardan ajralib turmasin. Variantlar ichida 'To'g'ri javob' kabi so'zlarni ishlatmang.
+- incorrect_answers massivida AYNAN 3 ta noto'g'ri variant bo'lsin.
+- JUDA MUHIM: HAR BIR JAVOB VARIANTI (to'g'ri javob ham, noto'g'rilari ham) QAT'IY RAVISHDA 2 TAdan 6 TAgacha SO'ZDAN IBORAT BO'LISHI SHART. ULAR MUTLAQO BIR XIL UZUNLIKDA BO'LISHI KERAK. Aks holda tizim buziladi.
+- Variantlar ichida 'To'g'ri javob' kabi so'zlarni ishlatmang.
 - FAQAT toza JSON qaytaring, hech qanday markdown (\`\`\`json) yoki tushuntirish matni yozmang.`
     : `Ты строгий технический IT-интервьюер и экзаменатор разработчиков.
 Составь полноценный экзамен РОВНО из 10 разных практических вопросов разной сложности (от базовых концепций до продвинутых архитектурных нюансов) по технологии '${skill}'.
 
-Верни ответ СТРОГО в виде JSON-массива из 10 объектов:
+Верни ответ СТРОГО в виде JSON-массива из 10 объектов строго следующего формата:
 [
   {
     "question": "Текст вопроса 1",
-    "options": ["Вариант 1", "Вариант 2", "Вариант 3", "Вариант 4"],
-    "correctAnswerIndex": 0
-  },
-  ...
+    "correct_answer": "Краткий правильный ответ",
+    "incorrect_answers": ["Неверный вариант 1", "Неверный вариант 2", "Неверный вариант 3"]
+  }
 ]
 
 Правила:
 - В массиве должно быть РОВНО 10 объектов!
-- В каждом вопросе в массиве options должно быть РОВНО 4 варианта ответа.
-- correctAnswerIndex — числовой индекс правильного ответа (0, 1, 2 или 3).
-- Один вариант правильный, три остальных — реалистичные дистракторы.
-- КРИТИЧЕСКИ ВАЖНО: Все 4 варианта ответа должны быть абсолютно одинакового размера и уровня детализации (например, не более 10-15 слов каждый). Правильный ответ не должен визуально выделяться длиной. Не используй слова 'Правильный ответ' в самих вариантах.
+- incorrect_answers должен содержать РОВНО 3 неверных варианта.
+- КРИТИЧЕСКИ ВАЖНО: КАЖДЫЙ ВАРИАНТ ОТВЕТА (и правильный, и неверные) ДОЛЖЕН СОДЕРЖАТЬ СТРОГО ОТ 2 ДО 6 СЛОВ. ОНИ ДОЛЖНЫ БЫТЬ АБСОЛЮТНО ОДИНАКОВОЙ ДЛИНЫ. Иначе система сломается.
+- Правильный ответ не должен визуально выделяться длиной. Не используй слова 'Правильный ответ' в самих вариантах.
 - Верни ТОЛЬКО валидный чистый JSON без разметки markdown (\`\`\`json) и без постороннего текста.`;
 
   // Попытка 1: Вызов Gemini через SDK @google/genai

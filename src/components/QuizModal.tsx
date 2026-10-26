@@ -24,7 +24,8 @@ import { showToast } from "@/utils/toast";
 export interface QuestionItem {
   question: string;
   options: string[];
-  correctAnswerIndex: number;
+  correctAnswerIndex?: number;
+  correctIndex?: number;
 }
 
 export interface QuizQuestion {
@@ -192,6 +193,10 @@ export default function QuizModal({
 
   const currentQ = questions[currentIndex];
   const isPassed = correctCount >= 8;
+  const currentCorrectIndex =
+    currentQ && typeof currentQ.correctIndex === "number"
+      ? currentQ.correctIndex
+      : currentQ?.correctAnswerIndex ?? 0;
 
   const handleOptionClick = (idx: number) => {
     if (isAnswerChecked || !currentQ) return;
@@ -199,7 +204,7 @@ export default function QuizModal({
     setSelectedOption(idx);
     setIsAnswerChecked(true);
 
-    const isCorrect = idx === currentQ.correctAnswerIndex;
+    const isCorrect = idx === currentCorrectIndex;
     const nextCorrectCount = isCorrect ? correctCount + 1 : correctCount;
 
     if (isCorrect) {
@@ -505,7 +510,7 @@ export default function QuizModal({
                     "bg-cyber-black text-zinc-300 border border-cyber-green/40 hover:border-cyber-green hover:text-cyber-green";
 
                   if (isAnswerChecked) {
-                    if (idx === currentQ.correctAnswerIndex) {
+                    if (idx === currentCorrectIndex) {
                       btnStyle =
                         "bg-cyber-blue text-cyber-black border-cyber-blue font-bold shadow-cyber-glow-blue animate-pulse";
                     } else if (idx === selectedOption) {

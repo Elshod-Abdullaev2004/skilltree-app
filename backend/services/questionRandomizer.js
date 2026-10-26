@@ -1,66 +1,93 @@
 /**
- * Перемешивание вариантов ответов для тестовых вопросов по алгоритму Фишера-Йетса (Fisher-Yates shuffle).
- * Гарантирует равномерное распределение правильного ответа по всем позициям (A, B, C, D)
- * и исключает предвзятость нейросети (position bias).
+ * Модуль рандомизации вариантов ответов для тестов и экзаменов SkillTree.
+ *
+ * Новая архитектура генерации:
+ * 1. ИИ генерирует объект: { question, correct_answer, incorrect_answers: [...] }
+ * 2. Сервер объединяет ответы: let options = [q.correct_answer, ...q.incorrect_answers]
+ * 3. Перемешивает массив options: options.sort(() => Math.random() - 0.5)
+ * 4. Находит индекс правильного ответа: let correctIndex = options.indexOf(q.correct_answer)
+ * 5. Формирует финальный объект: { question: q.question, options, correctIndex, correctAnswerIndex }
  */
 
 /**
- * Перемешивает варианты ответов одного вопроса с сохранением актуального индекса правильного ответа.
+ * Обрабатывает и перемешивает варианты одного вопроса
  *
- * @param {Object} questionItem Объект вопроса с полями options и correctAnswerIndex
- * @returns {Object} Новый объект вопроса с перемешанными options и обновленным correctAnswerIndex
+ * @param {Object} q Исходный объект вопроса от Gemini или из локального пула
+ * @returns {Object} Объект с перемешанными options и актуальным индексом правильного ответа
  */
-function shuffleQuestionOptions(questionItem) {
-  if (
-    !questionItem ||
-    !Array.isArray(questionItem.options) ||
-    questionItem.options.length === 0
-  ) {
-    return questionItem;
+function buildAndShuffleQuestion(q) {
+  if (!q) return null;
+
+  // Формат 1: Новый строгий формат от Gemini { question, correct_answer, incorrect_answers }
+  if (q.correct_answer && Array.isArray(q.incorrect_answers)) {
+    const correctAnswer = String(q.correct_answer).trim();
+    const incorrects = q.incorrect_answers
+      .filter((a) => a !== undefined && a !== null)
+      .map((a) => String(a).trim());
+
+    // 1. Склейка ответов
+    let options = [correctAnswer, ...incorrects.slice(0, 3)];
+
+    // 2. Перемешивание массива вариантов
+    options.sort(() => Math.random() - 0.5);
+
+    // 3. Поиск правильного индекса
+    let correctIndex = options.indexOf(correctAnswer);
+    if (correctIndex === -1) correctIndex = 0;
+
+    return {
+      question: String(q.question || "").trim(),
+      options: options,
+      correctIndex: correctIndex,
+      correctAnswerIndex: correctIndex, // обратная совместимость
+      skill: q.skill || q.technology || "Fullstack",
+    };
   }
 
-  const originalCorrectIndex =
-    typeof questionItem.correctAnswerIndex === "number" &&
-    questionItem.correctAnswerIndex >= 0 &&
-    questionItem.correctAnswerIndex < questionItem.options.length
-      ? questionItem.correctAnswerIndex
-      : 0;
+  // Формат 2: Формат с готовым массивом options
+  if (Array.isArray(q.options) && q.options.length > 0) {
+    const origIndex =
+      typeof q.correctIndex === "number"
+        ? q.correctIndex
+        : typeof q.correctAnswerIndex === "number"
+        ? q.correctAnswerIndex
+        : 0;
 
-  // Оборачиваем варианты в объекты с флагом правильного ответа
-  const wrapped = questionItem.options.map((optionText, idx) => ({
-    text: optionText,
-    isCorrect: idx === originalCorrectIndex,
-  }));
+    const correctAnswer =
+      q.options[origIndex] !== undefined ? q.options[origIndex] : q.options[0];
 
-  // Алгоритм Фишера-Йетса
-  for (let i = wrapped.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    const temp = wrapped[i];
-    wrapped[i] = wrapped[j];
-    wrapped[j] = temp;
+    let options = [...q.options.map((opt) => String(opt).trim())];
+    options.sort(() => Math.random() - 0.5);
+
+    let correctIndex = options.indexOf(correctAnswer);
+    if (correctIndex === -1) correctIndex = 0;
+
+    return {
+      question: String(q.question || "").trim(),
+      options: options,
+      correctIndex: correctIndex,
+      correctAnswerIndex: correctIndex,
+      skill: q.skill || q.technology || "Fullstack",
+    };
   }
 
-  const newCorrectIndex = wrapped.findIndex((item) => item.isCorrect);
-
-  return {
-    ...questionItem,
-    options: wrapped.map((item) => item.text),
-    correctAnswerIndex: newCorrectIndex !== -1 ? newCorrectIndex : 0,
-  };
+  return q;
 }
 
 /**
- * Прогоняет весь массив вопросов через рандомизатор вариантов ответов Фишера-Йетса.
+ * Прогоняет весь массив вопросов через рандомизатор вариантов ответов.
  *
- * @param {Array} questionsList Массив вопросов
- * @returns {Array} Массив вопросов с рандомизированными вариантами
+ * @param {Array} list Массив вопросов
+ * @returns {Array} Массив вопросов с перемешанными options и обновленным correctIndex
  */
-function shuffleAllQuestions(questionsList) {
-  if (!Array.isArray(questionsList)) return questionsList;
-  return questionsList.map(shuffleQuestionOptions);
+function processAndShuffleQuestions(list) {
+  if (!Array.isArray(list)) return [];
+  return list.map(buildAndShuffleQuestion).filter(Boolean);
 }
 
 module.exports = {
-  shuffleQuestionOptions,
-  shuffleAllQuestions,
+  buildAndShuffleQuestion,
+  processAndShuffleQuestions,
+  shuffleQuestionOptions: buildAndShuffleQuestion,
+  shuffleAllQuestions: processAndShuffleQuestions,
 };

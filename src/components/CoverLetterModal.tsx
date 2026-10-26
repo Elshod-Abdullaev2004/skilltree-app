@@ -33,7 +33,8 @@ import type { VacancyItem } from "@/components/VacancyCard";
 export interface InterviewQuestionItem {
   question: string;
   options: string[];
-  correctAnswerIndex: number;
+  correctAnswerIndex?: number;
+  correctIndex?: number;
   skill?: string;
 }
 
@@ -289,10 +290,15 @@ ${dbUser?.github_url ? `💻 GitHub с примерами: ${dbUser.github_url}\
   const handleOptionClick = (idx: number) => {
     if (isAnswerChecked || !currentQ) return;
 
+    const currentCorrectIndex =
+      typeof currentQ.correctIndex === "number"
+        ? currentQ.correctIndex
+        : currentQ.correctAnswerIndex ?? 0;
+
     setSelectedOption(idx);
     setIsAnswerChecked(true);
 
-    const isCorrect = idx === currentQ.correctAnswerIndex;
+    const isCorrect = idx === currentCorrectIndex;
     const nextScore = isCorrect ? score + 1 : score;
 
     if (isCorrect) {
@@ -615,11 +621,16 @@ ${dbUser?.github_url ? `💻 GitHub с примерами: ${dbUser.github_url}\
               {/* 4 Варианта ответа: терминальные команды */}
               <div className="space-y-2 pt-1">
                 {currentQ.options.map((option, idx) => {
+                  const currentCorrectIndex =
+                    typeof currentQ.correctIndex === "number"
+                      ? currentQ.correctIndex
+                      : currentQ.correctAnswerIndex ?? 0;
+
                   let buttonStyle =
                     "bg-cyber-black text-zinc-300 border border-cyber-green/40 hover:border-cyber-green hover:text-cyber-green";
 
                   if (isAnswerChecked) {
-                    if (idx === currentQ.correctAnswerIndex) {
+                    if (idx === currentCorrectIndex) {
                       // При правильном ответе: МИГАЕТ СИНИМ (cyber-blue)
                       buttonStyle =
                         "bg-cyber-blue text-cyber-black border-cyber-blue font-black shadow-cyber-glow-blue animate-pulse";
@@ -645,7 +656,7 @@ ${dbUser?.github_url ? `💻 GitHub с примерами: ${dbUser.github_url}\
                         [{String.fromCharCode(65 + idx)}] &gt;
                       </span>
                       <span className="flex-1 leading-snug">{option}</span>
-                      {isAnswerChecked && idx === currentQ.correctAnswerIndex && (
+                      {isAnswerChecked && idx === currentCorrectIndex && (
                         <CheckCircle2 className="w-4 h-4 text-cyber-black shrink-0 stroke-[2.5]" />
                       )}
                       {isAnswerChecked &&

@@ -88,16 +88,49 @@ function parseAndValidateInterviewQuestions(rawText) {
     if (
       item &&
       item.question &&
-      Array.isArray(item.options) &&
-      item.options.length === 4 &&
-      typeof item.correctAnswerIndex === "number" &&
-      item.correctAnswerIndex >= 0 &&
-      item.correctAnswerIndex <= 3
+      item.correct_answer &&
+      Array.isArray(item.incorrect_answers) &&
+      item.incorrect_answers.length >= 3
     ) {
+      const correctAnswer = String(item.correct_answer).trim();
+      let options = [
+        correctAnswer,
+        ...item.incorrect_answers.slice(0, 3).map((a) => String(a).trim()),
+      ];
+      options.sort(() => Math.random() - 0.5);
+      let correctIndex = options.indexOf(correctAnswer);
+      if (correctIndex === -1) correctIndex = 0;
+
       validQuestions.push({
         question: String(item.question).trim(),
-        options: item.options.map((opt) => String(opt).trim()),
-        correctAnswerIndex: Math.floor(item.correctAnswerIndex),
+        options: options,
+        correctIndex: correctIndex,
+        correctAnswerIndex: correctIndex,
+        skill: String(item.skill || item.technology || "Fullstack").trim(),
+      });
+    } else if (
+      item &&
+      item.question &&
+      Array.isArray(item.options) &&
+      item.options.length === 4
+    ) {
+      const origIndex =
+        typeof item.correctIndex === "number"
+          ? item.correctIndex
+          : typeof item.correctAnswerIndex === "number"
+          ? item.correctAnswerIndex
+          : 0;
+      const correctAnswer = String(item.options[origIndex]).trim();
+      let options = [...item.options.map((opt) => String(opt).trim())];
+      options.sort(() => Math.random() - 0.5);
+      let correctIndex = options.indexOf(correctAnswer);
+      if (correctIndex === -1) correctIndex = 0;
+
+      validQuestions.push({
+        question: String(item.question).trim(),
+        options: options,
+        correctIndex: correctIndex,
+        correctAnswerIndex: correctIndex,
         skill: String(item.skill || item.technology || "Fullstack").trim(),
       });
     }
@@ -532,23 +565,20 @@ Savollar quyidagilarni o'z ichiga olishi SHART:
 3. Koddagi xatolarni topish (bug hunting).
 4. Situatsion amaliy keyslar (performance, memory leak, network, xavfsizlik).
 
-Format talablari:
-- Har bir savolda AYNAN 4 ta javob varianti va 1 ta to'g'ri javob indeksi (0, 1, 2 yoki 3) bo'lsin.
-- Har bir savolda "skill" maydoni bo'lsin.
-- Qat'iy toza JSON massiv qaytaring:
+Javobni FAQAT va QAT'IY ravishda quyidagi JSON-massiv formatida qaytaring:
 [
   {
     "question": "Savol matni",
-    "options": ["Variant 1", "Variant 2", "Variant 3", "Variant 4"],
-    "correctAnswerIndex": 0,
+    "correct_answer": "Qisqa to'g'ri javob",
+    "incorrect_answers": ["1-noto'g'ri variant", "2-noto'g'ri variant", "3-noto'g'ri variant"],
     "skill": "Texnologiya/Mavzu"
   }
 ]
 Qoidalar:
 - Massivda AYNAN 15 ta ob'ekt bo'lishi kerak.
-- Har bir ob'ektda "options" massivida AYNAN 4 ta variant bo'lsin.
-- "correctAnswerIndex": to'g'ri javob indeksi (0, 1, 2 yoki 3).
-- JUDA MUHIM: Barcha 4 ta javob varianti mutlaqo bir xil hajm va tafsilot darajasida bo'lsin (har biri 10-15 so'zdan oshmasin). To'g'ri javob uzunligi yoki uslubi bilan boshqalardan ajralib turmasin. Variantlar ichida 'To'g'ri javob' kabi so'zlarni ishlatmang.
+- incorrect_answers massivida AYNAN 3 ta noto'g'ri variant bo'lsin.
+- JUDA MUHIM: HAR BIR JAVOB VARIANTI (to'g'ri javob ham, noto'g'rilari ham) QAT'IY RAVISHDA 2 TAdan 6 TAgacha SO'ZDAN IBORAT BO'LISHI SHART. ULAR MUTLAQO BIR XIL UZUNLIKDA BO'LISHI KERAK. Aks holda tizim buziladi.
+- Variantlar ichida 'To'g'ri javob' kabi so'zlarni ishlatmang.
 - Hech qanday markdown (\`\`\`json) va ortiqcha so'z yozmang!`
         : `Ты — строгий Senior разработчик и техлид, проводящий техническое собеседование в компанию '${company}' на позицию '${vacancyTitle}'.
 Проанализируй текст вакансии:
@@ -561,21 +591,20 @@ ${vacancyDescription || vacancyTitle}
 3. Поиск ошибок в коде (bug hunting).
 4. Ситуативные задачи (performance, memory leaks, безопасность, edge cases).
 
-Формат: 4 варианта ответа, 1 правильный.
-Верни строгий JSON-массив из 15 объектов:
+Верни строгий JSON-массив из 15 объектов строго следующего формата:
 [
   {
     "question": "Текст сложного вопроса",
-    "options": ["Вариант 1", "Вариант 2", "Вариант 3", "Вариант 4"],
-    "correctAnswerIndex": 0,
+    "correct_answer": "Краткий правильный ответ",
+    "incorrect_answers": ["Неверный вариант 1", "Неверный вариант 2", "Неверный вариант 3"],
     "skill": "Технология/Тема"
   }
 ]
 Правила:
 - В массиве должно быть РОВНО 15 объектов!
-- В options ровно 4 варианта.
-- correctAnswerIndex: число 0, 1, 2 или 3.
-- КРИТИЧЕСКИ ВАЖНО: Все 4 варианта ответа должны быть абсолютно одинакового размера и уровня детализации (например, не более 10-15 слов каждый). Правильный ответ не должен визуально выделяться длиной. Не используй слова 'Правильный ответ' в самих вариантах.
+- incorrect_answers должен содержать РОВНО 3 неверных варианта.
+- КРИТИЧЕСКИ ВАЖНО: КАЖДЫЙ ВАРИАНТ ОТВЕТА (и правильный, и неверные) ДОЛЖЕН СОДЕРЖАТЬ СТРОГО ОТ 2 ДО 6 СЛОВ. ОНИ ДОЛЖНЫ БЫТЬ АБСОЛЮТНО ОДИНАКОВОЙ ДЛИНЫ. Иначе система сломается.
+- Правильный ответ не должен визуально выделяться длиной. Не используй слова 'Правильный ответ' в самих вариантах.
 - Верни ТОЛЬКО чистый JSON без markdown (\`\`\`json) и постороннего текста.`;
 
       // Попытка 1: Через SDK @google/genai
