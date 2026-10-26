@@ -3,6 +3,7 @@ const axios = require("axios");
 const { GoogleGenAI } = require("@google/genai");
 const telegramAuth = require("../middleware/telegramAuth");
 const User = require("../models/User");
+const { shuffleAllQuestions } = require("../services/questionRandomizer");
 
 const router = express.Router();
 
@@ -543,7 +544,12 @@ Format talablari:
     "skill": "Texnologiya/Mavzu"
   }
 ]
-Massivda AYNAN 15 ta ob'ekt bo'lishi kerak. Hech qanday markdown (\`\`\`json) va ortiqcha so'z yozmang!`
+Qoidalar:
+- Massivda AYNAN 15 ta ob'ekt bo'lishi kerak.
+- Har bir ob'ektda "options" massivida AYNAN 4 ta variant bo'lsin.
+- "correctAnswerIndex": to'g'ri javob indeksi (0, 1, 2 yoki 3).
+- JUDA MUHIM: Barcha 4 ta javob varianti mutlaqo bir xil hajm va tafsilot darajasida bo'lsin (har biri 10-15 so'zdan oshmasin). To'g'ri javob uzunligi yoki uslubi bilan boshqalardan ajralib turmasin. Variantlar ichida 'To'g'ri javob' kabi so'zlarni ishlatmang.
+- Hech qanday markdown (\`\`\`json) va ortiqcha so'z yozmang!`
         : `Ты — строгий Senior разработчик и техлид, проводящий техническое собеседование в компанию '${company}' на позицию '${vacancyTitle}'.
 Проанализируй текст вакансии:
 ${vacancyDescription || vacancyTitle}
@@ -569,6 +575,7 @@ ${vacancyDescription || vacancyTitle}
 - В массиве должно быть РОВНО 15 объектов!
 - В options ровно 4 варианта.
 - correctAnswerIndex: число 0, 1, 2 или 3.
+- КРИТИЧЕСКИ ВАЖНО: Все 4 варианта ответа должны быть абсолютно одинакового размера и уровня детализации (например, не более 10-15 слов каждый). Правильный ответ не должен визуально выделяться длиной. Не используй слова 'Правильный ответ' в самих вариантах.
 - Верни ТОЛЬКО чистый JSON без markdown (\`\`\`json) и постороннего текста.`;
 
       // Попытка 1: Через SDK @google/genai
@@ -635,13 +642,16 @@ ${vacancyDescription || vacancyTitle}
       console.warn("⚠️ [VacancyInterview Limit] Ошибка сохранения счетчика попыток:", saveErr.message);
     }
 
+    // Прогоняем варианты каждого вопроса через рандомизатор Фишера-Йетса
+    const randomizedQuestions = shuffleAllQuestions(questions.slice(0, 15));
+
     return res.status(200).json({
       success: true,
       vacancyTitle,
       company,
       totalQuestions: 15,
       passingScore: 12,
-      questions: questions.slice(0, 15),
+      questions: randomizedQuestions,
       examsTakenToday: user ? user.examsTakenToday : 1,
       limit: 3,
     });
@@ -663,13 +673,15 @@ ${vacancyDescription || vacancyTitle}
       }
     } catch {}
 
+    const randomizedFallback = shuffleAllQuestions(fallback.slice(0, 15));
+
     return res.status(200).json({
       success: true,
       vacancyTitle: req.body?.vacancyTitle || "Junior Developer",
       company: req.body?.company || "IT Компания",
       totalQuestions: 15,
       passingScore: 12,
-      questions: fallback.slice(0, 15),
+      questions: randomizedFallback,
       examsTakenToday: user ? user.examsTakenToday : 1,
       limit: 3,
     });

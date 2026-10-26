@@ -3,6 +3,7 @@ const axios = require("axios");
 const { GoogleGenAI } = require("@google/genai");
 const telegramAuth = require("../middleware/telegramAuth");
 const User = require("../models/User");
+const { shuffleAllQuestions } = require("../services/questionRandomizer");
 
 const router = express.Router();
 
@@ -959,6 +960,7 @@ Qoidalar:
 - Har bir ob'ektda "options" massivida AYNAN 4 ta variant bo'lsin.
 - "correctAnswerIndex" to'g'ri javob indeksi (0, 1, 2 yoki 3) bo'lishi shart.
 - Variantlarning 1 tasi to'g'ri, 3 tasi ishonarli noto'g'ri bo'lsin.
+- JUDA MUHIM: Barcha 4 ta javob varianti mutlaqo bir xil hajm va tafsilot darajasida bo'lsin (har biri 10-15 so'zdan oshmasin). To'g'ri javob uzunligi yoki uslubi bilan boshqalardan ajralib turmasin. Variantlar ichida 'To'g'ri javob' kabi so'zlarni ishlatmang.
 - FAQAT toza JSON qaytaring, hech qanday markdown (\`\`\`json) yoki tushuntirish matni yozmang.`
     : `Ты строгий технический IT-интервьюер и экзаменатор разработчиков.
 Составь полноценный экзамен РОВНО из 10 разных практических вопросов разной сложности (от базовых концепций до продвинутых архитектурных нюансов) по технологии '${skill}'.
@@ -978,6 +980,7 @@ Qoidalar:
 - В каждом вопросе в массиве options должно быть РОВНО 4 варианта ответа.
 - correctAnswerIndex — числовой индекс правильного ответа (0, 1, 2 или 3).
 - Один вариант правильный, три остальных — реалистичные дистракторы.
+- КРИТИЧЕСКИ ВАЖНО: Все 4 варианта ответа должны быть абсолютно одинакового размера и уровня детализации (например, не более 10-15 слов каждый). Правильный ответ не должен визуально выделяться длиной. Не используй слова 'Правильный ответ' в самих вариантах.
 - Верни ТОЛЬКО валидный чистый JSON без разметки markdown (\`\`\`json) и без постороннего текста.`;
 
   // Попытка 1: Вызов Gemini через SDK @google/genai
@@ -996,12 +999,13 @@ Qoidalar:
       const parsedList = parseAndValidateGemini10Questions(response.text);
       if (parsedList.length >= 10) {
         await incrementExamCount();
+        const randomizedList = shuffleAllQuestions(parsedList.slice(0, 10));
         return res.status(200).json({
           skill,
           language: isUz ? "uz" : "ru",
           totalQuestions: 10,
           passingScore: 8,
-          questions: parsedList.slice(0, 10),
+          questions: randomizedList,
           model: "gemini-2.5-flash",
           examsTakenToday: user ? user.examsTakenToday : 1,
           limit: 3,
@@ -1032,12 +1036,13 @@ Qoidalar:
         const parsedList = parseAndValidateGemini10Questions(textOutput);
         if (parsedList.length >= 10) {
           await incrementExamCount();
+          const randomizedList = shuffleAllQuestions(parsedList.slice(0, 10));
           return res.status(200).json({
             skill,
             language: isUz ? "uz" : "ru",
             totalQuestions: 10,
             passingScore: 8,
-            questions: parsedList.slice(0, 10),
+            questions: randomizedList,
             model: "gemini-2.5-flash (REST)",
             examsTakenToday: user ? user.examsTakenToday : 1,
             limit: 3,
@@ -1063,12 +1068,13 @@ Qoidalar:
     fallbackDict.JavaScript;
 
   await incrementExamCount();
+  const randomizedFallback = shuffleAllQuestions(fallbackQuestions.slice(0, 10));
   return res.status(200).json({
     skill,
     language: langKey,
     totalQuestions: fallbackQuestions.length,
     passingScore: 8,
-    questions: fallbackQuestions.slice(0, 10),
+    questions: randomizedFallback,
     model: "fallback-hardcore-10",
     examsTakenToday: user ? user.examsTakenToday : 1,
     limit: 3,
