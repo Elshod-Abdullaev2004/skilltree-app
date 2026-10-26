@@ -486,6 +486,11 @@ router.post("/vacancy-interview", telegramAuth, async (req, res) => {
         });
       }
 
+      // Защита от пустых или некорректных данных для старых записей в БД
+      if (typeof user.examsTakenToday !== "number" || isNaN(user.examsTakenToday)) {
+        user.examsTakenToday = 0;
+      }
+
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const lastExam = new Date(user.lastExamDate || 0);
@@ -497,13 +502,7 @@ router.post("/vacancy-interview", telegramAuth, async (req, res) => {
       }
 
       if (user.examsTakenToday >= 3) {
-        return res.status(403).json({
-          error: "limit_reached",
-          message:
-            "Вы потратили 3 бесплатные попытки на сегодня. Получите безлимит и ИИ-разбор ошибок с подпиской Pro.",
-          examsTakenToday: user.examsTakenToday,
-          limit: 3,
-        });
+        return res.status(403).json({ error: "limit_reached" });
       }
     } catch (dbErr) {
       console.warn("⚠️ [VacancyInterview Limit] Ошибка проверки лимита в БД:", dbErr.message);

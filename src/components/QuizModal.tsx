@@ -58,7 +58,7 @@ export default function QuizModal({
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [isAnswerChecked, setIsAnswerChecked] = useState<boolean>(false);
   const [isFinished, setIsFinished] = useState<boolean>(false);
-  const [isLimitReached, setIsLimitReached] = useState<boolean>(false);
+  const [showProModal, setShowProModal] = useState<boolean>(false);
 
   const transitionTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -94,7 +94,7 @@ export default function QuizModal({
     setSelectedOption(null);
     setIsAnswerChecked(false);
     setIsFinished(false);
-    setIsLimitReached(false);
+    setShowProModal(false);
 
     const controller = new AbortController();
 
@@ -118,26 +118,28 @@ export default function QuizModal({
           }
         );
 
-        if (response.status === 403) {
+        let data: { error?: string; questions?: QuestionItem[] } | null = null;
+        try {
+          data = await response.json();
+        } catch {
+          data = null;
+        }
+
+        // Окно Pro открывается исключительно при совпадении кода 403 и ошибки limit_reached
+        if (response.status === 403 && data?.error === "limit_reached") {
           if (isMounted) {
-            setIsLimitReached(true);
+            setShowProModal(true);
             setLoading(false);
           }
           return;
+        } else {
+          if (isMounted) {
+            setShowProModal(false);
+          }
         }
 
         if (!response.ok) {
           throw new Error(`HTTP error ${response.status}`);
-        }
-
-        const data = await response.json();
-
-        if (data?.error === "limit_reached") {
-          if (isMounted) {
-            setIsLimitReached(true);
-            setLoading(false);
-          }
-          return;
         }
 
         if (isMounted && data && Array.isArray(data.questions) && data.questions.length > 0) {
@@ -150,7 +152,7 @@ export default function QuizModal({
         console.warn("⚠️ [QuizModal] Ошибка загрузки 10 вопросов от AI, подключаем резерв:", err);
       }
 
-      if (isMounted && !isLimitReached) {
+      if (isMounted && !showProModal) {
         const fallback10: QuestionItem[] = Array.from({ length: 10 }).map((_, i) => ({
           question:
             lang === "uz"
@@ -336,7 +338,7 @@ export default function QuizModal({
           )}
 
           {/* 2. FAKE DOOR: ЛИМИТ ИСЧЕРПАН */}
-          {!loading && isLimitReached && (
+          {!loading && showProModal && (
             <div className="space-y-3.5 py-1 animate-in zoom-in-95 duration-200">
               <div className="bg-cyber-dark border border-cyber-yellow p-4 text-center space-y-3 shadow-[0_0_20px_rgba(255,214,0,0.2)]">
                 <div className="inline-flex items-center justify-center w-12 h-12 bg-cyber-black border border-cyber-yellow text-cyber-yellow">
@@ -382,7 +384,7 @@ export default function QuizModal({
           )}
 
           {/* 3. ЭКРАН ЗАВЕРШЕНИЯ: ПОБЕДА (>= 8) ИЛИ ПОРАЖЕНИЕ (<= 7) */}
-          {!loading && !isLimitReached && isFinished && (
+          {!loading && !showProModal && isFinished && (
             <div className="space-y-3.5 py-1 animate-in zoom-in-95 duration-200">
               {isPassed ? (
                 <div className="bg-cyber-dark border border-cyber-green p-4 text-center space-y-3 shadow-cyber-glow">
@@ -463,7 +465,7 @@ export default function QuizModal({
           )}
 
           {/* 4. ПРОЦЕСС ЭКЗАМЕНА (10 ВОПРОСОВ) */}
-          {!loading && !isLimitReached && !isFinished && currentQ && (
+          {!loading && !showProModal && !isFinished && currentQ && (
             <div className="space-y-3">
               {/* Прогресс */}
               <div className="bg-cyber-dark/60 border border-cyber-green/30 p-2 text-[10px] space-y-1">
