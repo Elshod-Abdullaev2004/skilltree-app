@@ -21,6 +21,8 @@ import {
   ShieldAlert,
   ShieldCheck,
   ChevronRight,
+  Crown,
+  Star,
 } from "lucide-react";
 import { useLanguage } from "@/utils/translations";
 import { useTelegram } from "@/context/TelegramProvider";
@@ -68,6 +70,7 @@ export default function CoverLetterModal({
 
   const [stage, setStage] = useState<ModalStage>("loading_interview");
   const [loadingStep, setLoadingStep] = useState(0);
+  const [isLimitReached, setIsLimitReached] = useState(false);
 
   // Состояние собеседования
   const [questions, setQuestions] = useState<InterviewQuestionItem[]>([]);
@@ -111,6 +114,7 @@ export default function CoverLetterModal({
   // Запуск загрузки 15 вопросов боевого собеседования
   const loadInterview = async (controller?: AbortController) => {
     setStage("loading_interview");
+    setIsLimitReached(false);
     setCurrentIndex(0);
     setScore(0);
     setSelectedOption(null);
@@ -146,8 +150,17 @@ export default function CoverLetterModal({
         }),
       });
 
+      if (response.status === 403) {
+        setIsLimitReached(true);
+        return;
+      }
+
       if (response.ok) {
         const data = await response.json();
+        if (data?.error === "limit_reached") {
+          setIsLimitReached(true);
+          return;
+        }
         if (Array.isArray(data.questions) && data.questions.length >= 15) {
           setQuestions(data.questions.slice(0, TOTAL_QUESTIONS));
           setStage("interview");
@@ -170,6 +183,7 @@ export default function CoverLetterModal({
       console.warn("⚠️ [VacancyInterview] Ошибка загрузки собеседования, запускаем локальный пул:", err);
     }
 
+    // Если лимит не исчерпан, только тогда активируем локальный резерв
     setQuestions(getFallbackQuestions(isUz, vacancy.tags?.[0]));
     setStage("interview");
   };
@@ -381,6 +395,21 @@ ${dbUser?.github_url ? `💻 GitHub с примерами: ${dbUser.github_url}\
     } catch {}
   };
 
+  const handleBuyPro = () => {
+    trackEvent("pro_clicked", {
+      source: "vacancy_interview",
+      vacancy: vacancy.title,
+      company: vacancy.company,
+      vacancy_id: vacancyId,
+    });
+    showToast(
+      isUz
+        ? "To'lov tizimi tez kunda qo'shiladi! Siz kutish ro'yxatidasiz."
+        : "Оплата скоро появится! Вы в листе ожидания."
+    );
+    onClose();
+  };
+
   const currentQ = questions[currentIndex];
   const primaryFailedSkill =
     missedSkills[0] || vacancy.tags?.[0] || "Frontend";
@@ -467,8 +496,54 @@ ${dbUser?.github_url ? `💻 GitHub с примерами: ${dbUser.github_url}\
             </span>
           </div>
 
+          {/* FAKE DOOR: ЛИМИТ ИСЧЕРПАН */}
+          {isLimitReached && (
+            <div className="space-y-3.5 py-1 animate-in zoom-in-95 duration-200">
+              <div className="bg-cyber-dark border border-cyber-yellow p-4 text-center space-y-3 shadow-[0_0_20px_rgba(255,214,0,0.2)]">
+                <div className="inline-flex items-center justify-center w-12 h-12 bg-cyber-black border border-cyber-yellow text-cyber-yellow">
+                  <Crown className="w-6 h-6 stroke-[2.5]" />
+                </div>
+
+                <div>
+                  <span className="text-[8px] font-bold text-cyber-yellow uppercase tracking-widest block mb-1">
+                    PERMISSION_DENIED // DAILY_LIMIT_EXCEEDED
+                  </span>
+                  <h3 className="text-sm font-bold uppercase text-white">
+                    {isUz ? "Kunlik limit tugadi" : "Дневной лимит исчерпан"}
+                  </h3>
+                  <div className="mt-2.5 bg-cyber-black border border-cyber-yellow/40 p-2.5 text-left text-zinc-300">
+                    <p className="text-xs leading-relaxed">
+                      {isUz
+                        ? "Siz bugungi barcha 3 ta bepul urinishdan foydalandingiz. Quyidagilarni olish uchun SkillTree Pro-ni oyiga 49 000 so'mga faollashtiring: cheksiz AI-testlar, Senior dasturchidan xatolar tahlili va barcha vakansiyalarga to'liq kirish."
+                        : "Вы использовали все 3 бесплатные попытки на сегодня. Оформите SkillTree Pro за 49 000 сум/мес, чтобы получить: безлимитные ИИ-тесты, разбор ошибок от Senior-разработчика и доступ ко всем вакансиям."}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={handleBuyPro}
+                    className="w-full py-2.5 px-3 bg-cyber-yellow text-cyber-black border border-cyber-yellow hover:bg-cyber-black hover:text-cyber-yellow font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all cursor-pointer rounded-none shadow-[0_0_15px_rgba(255,214,0,0.3)]"
+                  >
+                    <Star className="w-4 h-4 fill-black stroke-[1.5]" />
+                    <span>&gt; {isUz ? "Pro-ni faollashtirish ⚡" : "Активировать Pro ⚡"}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="w-full py-1.5 px-3 bg-cyber-black text-zinc-500 border border-zinc-800 hover:text-white font-bold text-xs uppercase tracking-widest transition-all cursor-pointer rounded-none"
+                  >
+                    [CLOSE_TERMINAL]
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* 1. ЭКРАН ЗАГРУЗКИ (КОНСОЛЬНАЯ ИНИЦИАЛИЗАЦИЯ) */}
-          {stage === "loading_interview" && (
+          {!isLimitReached && stage === "loading_interview" && (
             <div className="space-y-3 py-6 text-center">
               <div className="inline-flex items-center justify-center w-12 h-12 bg-cyber-dark border border-cyber-green text-cyber-green shadow-cyber-glow">
                 <Cpu className="w-6 h-6 stroke-[2] animate-pulse" />
@@ -490,7 +565,7 @@ ${dbUser?.github_url ? `💻 GitHub с примерами: ${dbUser.github_url}\
           )}
 
           {/* 2. ЭКРАН 15 ВОПРОСОВ (КОНСОЛЬ С ASCII ПРОГРЕСС-БАРОМ) */}
-          {stage === "interview" && currentQ && (
+          {!isLimitReached && stage === "interview" && currentQ && (
             <div className="space-y-3 animate-in zoom-in-95 duration-150">
               {/* ASCII Прогресс-бар загрузки взлома/теста */}
               <div className="bg-cyber-dark/60 border border-cyber-green/30 p-2 space-y-1 text-[10px]">
@@ -580,7 +655,7 @@ ${dbUser?.github_url ? `💻 GitHub с примерами: ${dbUser.github_url}\
           )}
 
           {/* 3. ЭКРАН ПРОВАЛА: МЕНЬШЕ 12 ИЗ 15 (ПЕРЕХОД К ПИСЬМУ И HH.UZ ЗАБЛОКИРОВАН) */}
-          {stage === "interview_failed" && (
+          {!isLimitReached && stage === "interview_failed" && (
             <div className="space-y-3.5 py-2 animate-in zoom-in-95 duration-200">
               <div className="bg-cyber-dark border border-cyber-red p-4 text-center space-y-3 shadow-cyber-glow-red">
                 <div className="inline-flex items-center justify-center w-12 h-12 bg-cyber-black border border-cyber-red text-cyber-red">
@@ -661,7 +736,7 @@ ${dbUser?.github_url ? `💻 GitHub с примерами: ${dbUser.github_url}\
           )}
 
           {/* 4. ЭКРАН ГЕНЕРАЦИИ ПИСЬМА (ПОСЛЕ УСПЕХА 12+ ИЗ 15) */}
-          {stage === "generating_letter" && (
+          {!isLimitReached && stage === "generating_letter" && (
             <div className="space-y-4 py-4 text-center">
               <div className="inline-flex items-center justify-center w-12 h-12 bg-cyber-dark border border-cyber-green text-cyber-green shadow-cyber-glow">
                 <ShieldCheck className="w-6 h-6 stroke-[2.5]" />
@@ -688,7 +763,7 @@ ${dbUser?.github_url ? `💻 GitHub с примерами: ${dbUser.github_url}\
           )}
 
           {/* 5. ЭКРАН ГОТОВОГО ПИСЬМА: ПЕРЕХОД НА HH.UZ РАЗРЕШЕН */}
-          {stage === "letter_ready" && (
+          {!isLimitReached && stage === "letter_ready" && (
             <div className="space-y-3 animate-in zoom-in-95 duration-150">
               {/* Бейдж верификации */}
               <div className="bg-cyber-dark border border-cyber-green p-2.5 flex items-center justify-between text-[10px] shadow-cyber-glow">

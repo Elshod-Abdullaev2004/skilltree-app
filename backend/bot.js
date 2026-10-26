@@ -23,116 +23,129 @@ function startBot() {
   // Регистрируем геттер бота в hhParser для рассылки уведомлений
   registerBotGetter(() => botInstance);
 
+  // Глобальный перехватчик ошибок Telegraf во избежание зависания процесса
+  bot.catch((err, ctx) => {
+    console.error(`❌ [Telegram Bot] Ошибка обработки обновления ${ctx?.updateType}:`, err.message);
+  });
+
   // 1. Обработчик команды /start: выбор языка (Русский / O'zbekcha)
   bot.start(async (ctx) => {
-    const from = ctx.from || {};
-    const telegramId = String(from.id || "");
-    const username =
-      from.username ||
-      `${from.first_name || ""} ${from.last_name || ""}`.trim() ||
-      `user_${telegramId}`;
+    try {
+      const from = ctx.from || {};
+      const telegramId = String(from.id || "");
+      const username =
+        from.username ||
+        `${from.first_name || ""} ${from.last_name || ""}`.trim() ||
+        `user_${telegramId}`;
 
-    // Регистрируем пользователя в БД сразу при /start, чтобы он получал уведомления
-    if (telegramId) {
-      try {
-        await User.findOneAndUpdate(
-          { telegramId },
-          {
-            $setOnInsert: {
-              telegramId,
-              username,
-              language: from.language_code === "uz" ? "uz" : "ru",
+      // Регистрируем пользователя в БД сразу при /start с await
+      if (telegramId) {
+        try {
+          await User.findOneAndUpdate(
+            { telegramId },
+            {
+              $setOnInsert: {
+                telegramId,
+                username,
+                language: from.language_code === "uz" ? "uz" : "ru",
+              },
             },
-          },
-          { upsert: true, new: true }
-        );
-      } catch (err) {
-        console.warn("⚠️ Не удалось сохранить пользователя при /start:", err.message);
+            { upsert: true, new: true }
+          );
+        } catch (err) {
+          console.warn("⚠️ Не удалось сохранить пользователя при /start:", err.message);
+        }
       }
-    }
 
-    await ctx.reply(
-      "Выберите язык / Tilni tanlang:",
-      Markup.inlineKeyboard([
-        [
-          Markup.button.callback("🇷🇺 Русский", "lang_ru"),
-          Markup.button.callback("🇺🇿 O'zbekcha", "lang_uz"),
-        ],
-      ])
-    );
+      await ctx.reply(
+        "Выберите язык / Tilni tanlang:",
+        Markup.inlineKeyboard([
+          [
+            Markup.button.callback("🇷🇺 Русский", "lang_ru"),
+            Markup.button.callback("🇺🇿 O'zbekcha", "lang_uz"),
+          ],
+        ])
+      );
+    } catch (startErr) {
+      console.error("❌ [Telegram Bot] Исключение в /start:", startErr.message);
+    }
   });
 
   // 2. Вспомогательная функция сохранения языка в MongoDB и отправки приветствия
   const handleLanguageSelection = async (ctx, lang) => {
     try {
-      await ctx.answerCbQuery();
-    } catch {
-      // ignore callback query timeout
-    }
+      try {
+        await ctx.answerCbQuery();
+      } catch {
+        // ignore callback query timeout
+      }
 
-    const from = ctx.from || {};
-    const telegramId = String(from.id || "unknown");
-    const firstName =
-      from.first_name || (lang === "uz" ? "Dasturchi" : "Разработчик");
-    const username =
-      from.username ||
-      `${from.first_name || ""} ${from.last_name || ""}`.trim() ||
-      `user_${telegramId}`;
+      const from = ctx.from || {};
+      const telegramId = String(from.id || "unknown");
+      const firstName =
+        from.first_name || (lang === "uz" ? "Dasturchi" : "Разработчик");
+      const username =
+        from.username ||
+        `${from.first_name || ""} ${from.last_name || ""}`.trim() ||
+        `user_${telegramId}`;
 
-    // Сохраняем выбранный язык в коллекцию User в MongoDB
-    try {
-      await User.findOneAndUpdate(
-        { telegramId },
-        {
-          $set: {
-            telegramId,
-            username,
-            language: lang,
+      // Сохраняем выбранный язык в коллекцию User в MongoDB
+      try {
+        await User.findOneAndUpdate(
+          { telegramId },
+          {
+            $set: {
+              telegramId,
+              username,
+              language: lang,
+            },
           },
-        },
-        { upsert: true, new: true }
-      );
-    } catch (dbErr) {
-      console.error(
-        "❌ [Telegram Bot] Ошибка сохранения языка в БД:",
-        dbErr.message
-      );
-    }
+          { upsert: true, new: true }
+        );
+      } catch (dbErr) {
+        console.error(
+          "❌ [Telegram Bot] Ошибка сохранения языка в БД:",
+          dbErr.message
+        );
+      }
 
-    if (lang === "uz") {
-      const uzWelcome =
-        `Salom, ${firstName}! 👋\n\n` +
-        `*SkillTree* startapiga xush kelibsiz — bu IT sohasida birinchi ishni topish va ko'nikmalarni doimiy rivojlantirish uchun sizning navigatoringiz!\n\n` +
-        `Ilova ichida sizni quyidagilar kutmoqda:\n` +
-        `• 🎯 Yangi amaliyotlar (stajirovka) va Junior vakansiyalar\n` +
-        `• ⚡ HR talablariga mos AI-rezyume generatori\n` +
-        `• ⚔️ AI-mentor bilan texnik suhbat trenajori\n` +
-        `• 🌳 Interaktiv Ko'nikmalar Daraxti (SkillTree)\n\n` +
-        `Ilovani ishga tushirish uchun quyidagi tugmani bosing:`;
+      if (lang === "uz") {
+        const uzWelcome =
+          `Salom, ${firstName}! 👋\n\n` +
+          `*SkillTree* startapiga xush kelibsiz — bu IT sohasida birinchi ishni topish va ko'nikmalarni doimiy rivojlantirish uchun sizning navigatoringiz!\n\n` +
+          `Ilova ichida sizni quyidagilar kutmoqda:\n` +
+          `• 🎯 Yangi amaliyotlar (stajirovka) va Junior vakansiyalar\n` +
+          `• ⚡ HR talablariga mos AI-rezyume generatori\n` +
+          `• ⚔️ AI-mentor bilan texnik suhbat trenajori\n` +
+          `• 🌳 Interaktiv Ko'nikmalar Daraxti (SkillTree)\n\n` +
+          `Ilovani ishga tushirish uchun quyidagi tugmani bosing:`;
 
-      await ctx.reply(uzWelcome, {
-        parse_mode: "Markdown",
-        ...Markup.inlineKeyboard([
-          [Markup.button.webApp("🚀 SkillTree-ni ochish", webAppUrl)],
-        ]),
-      });
-    } else {
-      const ruWelcome =
-        `Привет, ${firstName}! 👋\n\n` +
-        `Добро пожаловать в *SkillTree* — твой навигатор для поиска первой работы в IT и непрерывной прокачки навыков!\n\n` +
-        `Внутри мини-приложения тебя ждут:\n` +
-        `• 🎯 Свежие стажировки и Junior-вакансии\n` +
-        `• ⚡ Генератор ИИ-резюме под требования HR\n` +
-        `• ⚔️ Тренажер технических собеседований с ИИ-ментором\n` +
-        `• 🌳 Интерактивное Дерево навыков (SkillTree)\n\n` +
-        `Нажми кнопку ниже, чтобы запустить приложение:`;
+        await ctx.reply(uzWelcome, {
+          parse_mode: "Markdown",
+          ...Markup.inlineKeyboard([
+            [Markup.button.webApp("🚀 SkillTree-ni ochish", webAppUrl)],
+          ]),
+        });
+      } else {
+        const ruWelcome =
+          `Привет, ${firstName}! 👋\n\n` +
+          `Добро пожаловать в *SkillTree* — твой навигатор для поиска первой работы в IT и непрерывной прокачки навыков!\n\n` +
+          `Внутри мини-приложения тебя ждут:\n` +
+          `• 🎯 Свежие стажировки и Junior-вакансии\n` +
+          `• ⚡ Генератор ИИ-резюме под требования HR\n` +
+          `• ⚔️ Тренажер технических собеседований с ИИ-ментором\n` +
+          `• 🌳 Интерактивное Дерево навыков (SkillTree)\n\n` +
+          `Нажми кнопку ниже, чтобы запустить приложение:`;
 
-      await ctx.reply(ruWelcome, {
-        parse_mode: "Markdown",
-        ...Markup.inlineKeyboard([
-          [Markup.button.webApp("🚀 Открыть SkillTree", webAppUrl)],
-        ]),
-      });
+        await ctx.reply(ruWelcome, {
+          parse_mode: "Markdown",
+          ...Markup.inlineKeyboard([
+            [Markup.button.webApp("🚀 Открыть SkillTree", webAppUrl)],
+          ]),
+        });
+      }
+    } catch (langErr) {
+      console.error("❌ [Telegram Bot] Ошибка обработки выбора языка:", langErr.message);
     }
   };
 
@@ -141,15 +154,19 @@ function startBot() {
 
   // Поддержка текстового выбора языка и команды /lang
   bot.command(["lang", "language"], async (ctx) => {
-    await ctx.reply(
-      "Выберите язык / Tilni tanlang:",
-      Markup.inlineKeyboard([
-        [
-          Markup.button.callback("🇷🇺 Русский", "lang_ru"),
-          Markup.button.callback("🇺🇿 O'zbekcha", "lang_uz"),
-        ],
-      ])
-    );
+    try {
+      await ctx.reply(
+        "Выберите язык / Tilni tanlang:",
+        Markup.inlineKeyboard([
+          [
+            Markup.button.callback("🇷🇺 Русский", "lang_ru"),
+            Markup.button.callback("🇺🇿 O'zbekcha", "lang_uz"),
+          ],
+        ])
+      );
+    } catch (err) {
+      console.error("❌ [Telegram Bot] Ошибка команды /lang:", err.message);
+    }
   });
 
   bot.hears(/^(🇷🇺\s*)?(русский|russian|ru)$/i, (ctx) =>

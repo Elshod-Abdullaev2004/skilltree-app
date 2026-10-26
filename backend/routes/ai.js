@@ -477,8 +477,36 @@ router.post("/vacancy-interview", telegramAuth, async (req, res) => {
     let user = null;
     try {
       user = await User.findOne({ telegramId: String(telegramId) });
+      if (!user) {
+        user = new User({
+          telegramId: String(telegramId),
+          username: req.telegramUser?.username || "Learner",
+          examsTakenToday: 0,
+          lastExamDate: new Date(),
+        });
+      }
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const lastExam = new Date(user.lastExamDate || 0);
+      lastExam.setHours(0, 0, 0, 0);
+
+      if (lastExam.getTime() < today.getTime()) {
+        user.examsTakenToday = 0;
+        user.lastExamDate = new Date();
+      }
+
+      if (user.examsTakenToday >= 3) {
+        return res.status(403).json({
+          error: "limit_reached",
+          message:
+            "Вы потратили 3 бесплатные попытки на сегодня. Получите безлимит и ИИ-разбор ошибок с подпиской Pro.",
+          examsTakenToday: user.examsTakenToday,
+          limit: 3,
+        });
+      }
     } catch (dbErr) {
-      console.warn("⚠️ [VacancyInterview] Ошибка поиска пользователя:", dbErr.message);
+      console.warn("⚠️ [VacancyInterview Limit] Ошибка проверки лимита в БД:", dbErr.message);
     }
 
     const resolvedLanguage = language || user?.language || "ru";
@@ -598,6 +626,16 @@ ${vacancyDescription || vacancyTitle}
       );
     }
 
+    try {
+      if (user) {
+        user.examsTakenToday = (user.examsTakenToday || 0) + 1;
+        user.lastExamDate = new Date();
+        await user.save();
+      }
+    } catch (saveErr) {
+      console.warn("⚠️ [VacancyInterview Limit] Ошибка сохранения счетчика попыток:", saveErr.message);
+    }
+
     return res.status(200).json({
       success: true,
       vacancyTitle,
@@ -605,8 +643,11 @@ ${vacancyDescription || vacancyTitle}
       totalQuestions: 15,
       passingScore: 12,
       questions: questions.slice(0, 15),
+      examsTakenToday: user ? user.examsTakenToday : 1,
+      limit: 3,
     });
   } catch (error) {
+    if (res.headersSent) return;
     console.error("❌ [VacancyInterview] Ошибка:", error.message);
     const isUz = req.body?.language === "uz";
     const fallback = generateFallbackInterviewQuestions(
@@ -614,6 +655,15 @@ ${vacancyDescription || vacancyTitle}
       req.body?.vacancyDescription || "",
       isUz
     );
+
+    try {
+      if (user) {
+        user.examsTakenToday = (user.examsTakenToday || 0) + 1;
+        user.lastExamDate = new Date();
+        await user.save();
+      }
+    } catch {}
+
     return res.status(200).json({
       success: true,
       vacancyTitle: req.body?.vacancyTitle || "Junior Developer",
@@ -621,6 +671,8 @@ ${vacancyDescription || vacancyTitle}
       totalQuestions: 15,
       passingScore: 12,
       questions: fallback.slice(0, 15),
+      examsTakenToday: user ? user.examsTakenToday : 1,
+      limit: 3,
     });
   }
 });

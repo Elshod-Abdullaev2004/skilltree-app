@@ -70,6 +70,14 @@ app.use(
 // Парсинг JSON
 app.use(express.json());
 
+// Пинг-эндпоинты для UptimeRobot и внешних мониторов (предотвращение сна на Render)
+app.get("/api/ping", (_req, res) => {
+  res.status(200).json({ status: "ok" });
+});
+app.get("/ping", (_req, res) => {
+  res.status(200).json({ status: "ok" });
+});
+
 // Проверка состояния сервера
 app.get("/api/health", (_req, res) => {
   res.status(200).json({

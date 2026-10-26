@@ -901,15 +901,16 @@ async function generateHandler(req, res) {
       });
     }
 
-    const now = new Date();
-    // Если lastExamDate было вчера (или раньше), сбрасываем examsTakenToday на 0 и обновляем дату
-    if (!user.lastExamDate || !isSameDay(user.lastExamDate, now)) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const lastExam = new Date(user.lastExamDate || 0);
+    lastExam.setHours(0, 0, 0, 0);
+
+    if (lastExam.getTime() < today.getTime()) {
       user.examsTakenToday = 0;
-      user.lastExamDate = now;
-      await user.save();
+      user.lastExamDate = new Date();
     }
 
-    // Если лимит examsTakenToday >= 3, возвращаем статус 403 Forbidden с { error: 'limit_reached' }
     if (user.examsTakenToday >= 3) {
       return res.status(403).json({
         error: "limit_reached",

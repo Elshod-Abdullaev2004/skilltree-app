@@ -118,23 +118,27 @@ export default function QuizModal({
           }
         );
 
-        if (!response.ok) {
-          if (response.status === 403) {
-            try {
-              const errData = await response.json();
-              if (errData?.error === "limit_reached") {
-                if (isMounted) {
-                  setIsLimitReached(true);
-                  setLoading(false);
-                }
-                return;
-              }
-            } catch {}
+        if (response.status === 403) {
+          if (isMounted) {
+            setIsLimitReached(true);
+            setLoading(false);
           }
+          return;
+        }
+
+        if (!response.ok) {
           throw new Error(`HTTP error ${response.status}`);
         }
 
         const data = await response.json();
+
+        if (data?.error === "limit_reached") {
+          if (isMounted) {
+            setIsLimitReached(true);
+            setLoading(false);
+          }
+          return;
+        }
 
         if (isMounted && data && Array.isArray(data.questions) && data.questions.length > 0) {
           setQuestions(data.questions.slice(0, 10));
@@ -146,7 +150,7 @@ export default function QuizModal({
         console.warn("⚠️ [QuizModal] Ошибка загрузки 10 вопросов от AI, подключаем резерв:", err);
       }
 
-      if (isMounted) {
+      if (isMounted && !isLimitReached) {
         const fallback10: QuestionItem[] = Array.from({ length: 10 }).map((_, i) => ({
           question:
             lang === "uz"
@@ -349,8 +353,8 @@ export default function QuizModal({
                   <div className="mt-2.5 bg-cyber-black border border-cyber-yellow/40 p-2.5 text-left text-zinc-300">
                     <p className="text-xs leading-relaxed">
                       {lang === "uz"
-                        ? "Siz bugungi 3 ta bepul urinishingizdan foydalandingiz. Pro ruxsatnomasi bilan cheksiz testlar va AI tahlilini faollashtiring."
-                        : "Вы потратили 3 бесплатные попытки на сегодня. Получите безлимит и персональный ИИ-разбор ошибок со статусом Pro."}
+                        ? "Siz bugungi barcha 3 ta bepul urinishdan foydalandingiz. Quyidagilarni olish uchun SkillTree Pro-ni oyiga 49 000 so'mga faollashtiring: cheksiz AI-testlar, Senior dasturchidan xatolar tahlili va barcha vakansiyalarga to'liq kirish."
+                        : "Вы использовали все 3 бесплатные попытки на сегодня. Оформите SkillTree Pro за 49 000 сум/мес, чтобы получить: безлимитные ИИ-тесты, разбор ошибок от Senior-разработчика и доступ ко всем вакансиям."}
                     </p>
                   </div>
                 </div>
@@ -359,10 +363,10 @@ export default function QuizModal({
                   <button
                     type="button"
                     onClick={handleBuyPro}
-                    className="w-full py-2.5 px-3 bg-cyber-yellow text-cyber-black border border-cyber-yellow hover:bg-cyber-black hover:text-cyber-yellow font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all cursor-pointer rounded-none"
+                    className="w-full py-2.5 px-3 bg-cyber-yellow text-cyber-black border border-cyber-yellow hover:bg-cyber-black hover:text-cyber-yellow font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all cursor-pointer rounded-none shadow-[0_0_15px_rgba(255,214,0,0.3)]"
                   >
                     <Star className="w-4 h-4 fill-black stroke-[1.5]" />
-                    <span>&gt; UPGRADE TO ROOT PRO ⭐️</span>
+                    <span>&gt; {lang === "uz" ? "Pro-ni faollashtirish ⚡" : "Активировать Pro ⚡"}</span>
                   </button>
 
                   <button
